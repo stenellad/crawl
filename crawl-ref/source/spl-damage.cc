@@ -350,7 +350,8 @@ static counted_monster_list _counted_monster_list_from_vector(
 
 static bool _drain_lifeable(const actor* agent, const actor* act)
 {
-    if (act->res_negative_energy() >= 3)
+    option_list opts;
+    if (act->res_negative_energy(opts) >= 3)
         return false;
 
     if (!agent)
@@ -497,6 +498,7 @@ static spret_type _cast_los_attack_spell(spell_type spell, int pow,
                                          bool actual, bool fail,
                                          int* damage_done)
 {
+    option_list opts;
     const monster* mons = agent ? agent->as_monster() : nullptr;
 
     const zap_type zap = spell_to_zap(spell);
@@ -523,7 +525,8 @@ static spret_type _cast_los_attack_spell(spell_type spell, int pow,
             mons_invis_msg = "The ambient heat is drained!";
             verb = "frozen";
             vulnerable = [](const actor *caster, const actor *act) {
-                return act->is_player() || act->res_cold() < 3;
+                option_list opts;
+                return act->is_player() || act->res_cold(opts) < 3;
             };
             break;
 
@@ -1502,6 +1505,8 @@ static int _ignite_poison_monsters(coord_def where, int pow, actor *agent)
 
 static int _ignite_poison_player(coord_def where, int pow, actor *agent)
 {
+    option_list opts;
+
     if (agent->is_player() || where != you.pos())
         return 0;
 
@@ -1521,7 +1526,7 @@ static int _ignite_poison_player(coord_def where, int pow, actor *agent)
     if (tracer)
         return mons_aligned(&you, agent) ? -1 * damage : damage;
 
-    const int resist = player_res_fire();
+    const int resist = you.res_fire(opts);
     if (resist > 0)
         mpr("You feel like your blood is boiling!");
     else if (resist < 0)
@@ -1783,6 +1788,7 @@ spret_type cast_ignition(const actor *agent, int pow, bool fail)
 static int _discharge_monsters(const coord_def &where, int pow,
                               const actor &agent)
 {
+    option_list opts;
     actor* victim = actor_at(where);
 
     if (!victim)
@@ -1802,7 +1808,7 @@ static int _discharge_monsters(const coord_def &where, int pow,
     beam.draw_delay = 0;
 
     dprf("Static discharge on (%d,%d) pow: %d", where.x, where.y, pow);
-    if (victim->is_player() || victim->res_elec() <= 0)
+    if (victim->is_player() || victim->res_elec(opts) <= 0)
         beam.draw(where);
 
     if (victim->is_player())
@@ -1818,7 +1824,7 @@ static int _discharge_monsters(const coord_def &where, int pow,
             victim->expose_to_element(BEAM_ELECTRICITY, 2);
     }
     // rEelec monsters don't allow arcs to continue.
-    else if (victim->res_elec() > 0)
+    else if (victim->res_elec(opts) > 0)
         return 0;
     else
     {
@@ -1868,6 +1874,7 @@ static int _discharge_monsters(const coord_def &where, int pow,
 
 bool safe_discharge(coord_def where, vector<const actor *> &exclude)
 {
+    option_list opts;
     for (adjacent_iterator ai(where); ai; ++ai)
     {
         const actor *act = actor_at(*ai);
@@ -1879,7 +1886,7 @@ bool safe_discharge(coord_def where, vector<const actor *> &exclude)
             if (act->is_monster())
             {
                 // Harmless to these monsters, so don't prompt about them.
-                if (act->res_elec() > 0)
+                if (act->res_elec(opts) > 0)
                     continue;
 
                 if (stop_attack_prompt(act->as_monster(), false, where))
@@ -2257,7 +2264,8 @@ spret_type cast_sandblast(int pow, bolt &beam, bool fail)
 
 static bool _elec_not_immune(const actor *act)
 {
-    return act->res_elec() < 3;
+    option_list opts;
+    return act->res_elec(opts) < 3;
 }
 
 spret_type cast_thunderbolt(actor *caster, int pow, coord_def aim, bool fail)
@@ -2587,11 +2595,12 @@ spret_type cast_dazzling_spray(int pow, coord_def aim, bool fail)
 
 static bool _toxic_can_affect(const actor *act)
 {
+    option_list opts;
     if (act->is_monster() && act->as_monster()->submerged())
         return false;
 
     // currently monsters are still immune at rPois 1
-    return act->res_poison() < (act->is_player() ? 3 : 1);
+    return act->res_poison(opts) < (act->is_player() ? 3 : 1);
 }
 
 spret_type cast_toxic_radiance(actor *agent, int pow, bool fail, bool mon_tracer)

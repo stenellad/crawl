@@ -682,8 +682,8 @@ static const vector<chaos_effect> chaos_effects = {
         }, BEAM_PARALYSIS,
     },
     {
-        "petrify", 5, [](const actor &defender) {
-            return _is_chaos_slowable(defender) && !defender.res_petrify();
+        "petrify", 5, [](const actor &defender) {option_list opts;
+            return _is_chaos_slowable(defender) && !defender.res_petrify(opts);
         }, BEAM_PETRIFY,
     },
 };
@@ -1434,6 +1434,7 @@ bool attack::apply_poison_damage_brand()
 
 bool attack::apply_damage_brand(const char *what)
 {
+    option_list opts;
     bool brand_was_known = false;
     int brand = 0;
     bool ret = false;
@@ -1504,7 +1505,7 @@ bool attack::apply_damage_brand(const char *what)
         break;
 
     case SPWPN_ELECTROCUTION:
-        if (defender->res_elec() > 0)
+        if (defender->res_elec(opts) > 0)
             break;
         else if (one_chance_in(3))
         {

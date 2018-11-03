@@ -2998,6 +2998,8 @@ void mons_check_pool(monster* mons, const coord_def &oldpos,
     if (!mons->ground_level())
         return;
 
+    option_list opts;
+
     dungeon_feature_type grid = grd(mons->pos());
     if (grid != DNGN_LAVA && grid != DNGN_DEEP_WATER
         || monster_habitable_grid(mons, grid))
@@ -3016,7 +3018,7 @@ void mons_check_pool(monster* mons, const coord_def &oldpos,
     }
 
     // Even fire resistant monsters perish in lava.
-    if (grid == DNGN_LAVA && mons->res_fire() < 2)
+    if (grid == DNGN_LAVA && mons->res_fire(opts) < 2)
     {
         simple_monster_message(*mons, " is incinerated.",
                                MSGCH_MONSTER_DAMAGE, MDAM_DEAD);

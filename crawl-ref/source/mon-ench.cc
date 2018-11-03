@@ -1472,7 +1472,7 @@ void monster::apply_enchantment(const mon_enchant &me)
         if (coinflip())
             dam += roll_dice(1, poisonval + 1);
 
-        if (res_poison() < 0)
+        if (res_poison(opts) < 0)
             dam += roll_dice(2, poisonval) - 1;
 
         if (dam > 0)

@@ -1329,6 +1329,7 @@ void bolt::do_fire()
 int mons_adjust_flavoured(monster* mons, bolt &pbolt, int hurted,
                           bool doFlavouredEffects)
 {
+    option_list opts;
     // If we're not doing flavoured effects, must be preliminary
     // damage check only.
     // Do not print messages or apply any side effects!
@@ -1359,7 +1360,7 @@ int mons_adjust_flavoured(monster* mons, bolt &pbolt, int hurted,
             if (mons->is_icy())
                 simple_monster_message(*mons, " melts!");
             else if (mons_species(mons->type) == MONS_BUSH
-                     && mons->res_fire() < 0)
+                     && mons->res_fire(opts) < 0)
             {
                 simple_monster_message(*mons, " is on fire!");
             }
@@ -1439,7 +1440,7 @@ int mons_adjust_flavoured(monster* mons, bolt &pbolt, int hurted,
                                                       : " appears unharmed.");
             }
         }
-        else if (mons->res_acid() <= 0 && doFlavouredEffects)
+        else if (mons->res_acid(opts) <= 0 && doFlavouredEffects)
             mons->splash_with_acid(pbolt.agent());
         break;
     }
@@ -1477,7 +1478,7 @@ int mons_adjust_flavoured(monster* mons, bolt &pbolt, int hurted,
         break;
 
     case BEAM_NEG:
-        if (mons->res_negative_energy() == 3)
+        if (mons->res_negative_energy(opts) == 3)
         {
             if (doFlavouredEffects)
                 simple_monster_message(*mons, " completely resists.");
@@ -1508,7 +1509,7 @@ int mons_adjust_flavoured(monster* mons, bolt &pbolt, int hurted,
         break;
 
     case BEAM_MIASMA:
-        if (mons->res_rotting())
+        if (mons->res_rotting(opts))
         {
             if (doFlavouredEffects)
                 simple_monster_message(*mons, " completely resists.");
@@ -1598,7 +1599,7 @@ int mons_adjust_flavoured(monster* mons, bolt &pbolt, int hurted,
         break;
 
     case BEAM_MEPHITIC:
-        if (mons->res_poison() > 0)
+        if (mons->res_poison(opts) > 0)
         {
             if (doFlavouredEffects)
             {
@@ -1805,6 +1806,7 @@ void bolt::apply_bolt_paralysis(monster* mons)
 // drastically reduced.
 void bolt::apply_bolt_petrify(monster* mons)
 {
+    option_list opts;
     if (mons->petrified())
         return;
 
@@ -1831,10 +1833,11 @@ void bolt::apply_bolt_petrify(monster* mons)
 
 static bool _curare_hits_monster(actor *agent, monster* mons, int levels)
 {
+    option_list opts;
     if (!mons->alive())
         return false;
 
-    if (mons->res_poison() > 0)
+    if (mons->res_poison(opts) > 0)
         return false;
 
     poison_monster(mons, agent, levels, false);
@@ -1914,10 +1917,11 @@ bool poison_monster(monster* mons, const actor *who, int levels,
 // message).
 bool miasma_monster(monster* mons, const actor* who)
 {
+    option_list opts;
     if (!mons->alive())
         return false;
 
-    if (mons->res_rotting())
+    if (mons->res_rotting(opts))
         return false;
 
     bool success = poison_monster(mons, who);
@@ -1950,10 +1954,11 @@ bool miasma_monster(monster* mons, const actor* who)
 // Actually napalms a monster (with message).
 bool napalm_monster(monster* mons, const actor *who, int levels, bool verbose)
 {
+    option_list opts;
     if (!mons->alive())
         return false;
 
-    if (mons->res_sticky_flame() || levels <= 0 || mons->has_ench(ENCH_WATER_HOLD))
+    if (mons->res_sticky_flame(opts) || levels <= 0 || mons->has_ench(ENCH_WATER_HOLD))
         return false;
 
     const mon_enchant old_flame = mons->get_ench(ENCH_STICKY_FLAME);
@@ -1975,10 +1980,11 @@ bool napalm_monster(monster* mons, const actor *who, int levels, bool verbose)
 static bool _curare_hits_player(actor* agent, int levels, string name,
                                 string source_name)
 {
+    option_list opts;
     ASSERT(!crawl_state.game_is_arena());
 
-    if (player_res_poison() >= 3
-        || player_res_poison() > 0 && !one_chance_in(3))
+    if (you.res_poison(opts) >= 3
+        || you.res_poison(opts) > 0 && !one_chance_in(3))
     {
         return false;
     }
@@ -2906,6 +2912,7 @@ static bool _test_beam_hit(int attack, int defence, bool pierce,
 
 bool bolt::is_harmless(const monster* mon) const
 {
+    option_list opts;
     // For enchantments, this is already handled in nasty_to().
     if (is_enchantment())
         return !nasty_to(mon);
@@ -2921,34 +2928,34 @@ bool bolt::is_harmless(const monster* mon) const
         return mon->res_holy_energy() >= 3;
 
     case BEAM_STEAM:
-        return mon->res_steam() >= 3;
+        return mon->res_steam(opts) >= 3;
 
     case BEAM_FIRE:
-        return mon->res_fire() >= 3;
+        return mon->res_fire(opts) >= 3;
 
     case BEAM_COLD:
-        return mon->res_cold() >= 3;
+        return mon->res_cold(opts) >= 3;
 
     case BEAM_MIASMA:
-        return mon->res_rotting();
+        return mon->res_rotting(opts);
 
     case BEAM_NEG:
-        return mon->res_negative_energy() == 3;
+        return mon->res_negative_energy(opts) == 3;
 
     case BEAM_ELECTRICITY:
-        return mon->res_elec() >= 3;
+        return mon->res_elec(opts) >= 3;
 
     case BEAM_POISON:
-        return mon->res_poison() >= 3;
+        return mon->res_poison(opts) >= 3;
 
     case BEAM_ACID:
-        return mon->res_acid() >= 3;
+        return mon->res_acid(opts) >= 3;
 
     case BEAM_PETRIFY:
-        return mon->res_petrify() || mon->petrified();
+        return mon->res_petrify(opts) || mon->petrified();
 
     case BEAM_MEPHITIC:
-        return mon->res_poison() > 0 || mon->is_unbreathing();
+        return mon->res_poison(opts) > 0 || mon->is_unbreathing();
 
     default:
         return false;
@@ -2960,6 +2967,7 @@ bool bolt::is_harmless(const monster* mon) const
 // available to the player.
 bool bolt::harmless_to_player() const
 {
+    option_list opts(false);
     dprf(DIAG_BEAM, "beam flavour: %d", flavour);
 
     if (you.cloud_immune() && is_big_cloud())
@@ -2984,33 +2992,33 @@ bool bolt::harmless_to_player() const
         return you.res_holy_energy() >= 3;
 
     case BEAM_MIASMA:
-        return you.res_rotting();
+        return you.res_rotting(opts);
 
     case BEAM_NEG:
-        return player_prot_life(false) >= 3;
+        return you.res_negative_energy(opts) >= 3;
 
     case BEAM_POISON:
-        return player_res_poison(false) >= 3
-               || is_big_cloud() && player_res_poison(false) > 0;
+        return you.res_poison(opts) >= 3
+               || is_big_cloud() && you.res_poison(opts) > 0;
 
     case BEAM_MEPHITIC:
         // With clarity, meph still does a tiny amount of damage (1d3 - 1).
         // Normally we'd just ignore it, but we shouldn't let a player
         // kill themselves without a warning.
-        return player_res_poison(false) > 0 || you.is_unbreathing()
+        return you.res_poison(opts) > 0 || you.is_unbreathing()
             || you.clarity(false) && you.hp > 2;
 
     case BEAM_ELECTRICITY:
-        return player_res_electricity(false);
+        return you.res_elec(opts);
 
     case BEAM_PETRIFY:
-        return you.res_petrify() || you.petrified();
+        return you.res_petrify(opts) || you.petrified();
 
     case BEAM_COLD:
         return is_big_cloud() && you.has_mutation(MUT_FREEZING_CLOUD_IMMUNITY);
 
     case BEAM_VIRULENCE:
-        return player_res_poison(false) >= 3;
+        return you.res_poison(opts) >= 3;
 
     default:
         return false;
@@ -3252,6 +3260,7 @@ bool bolt::misses_player()
 
 void bolt::affect_player_enchantment(bool resistible)
 {
+    option_list opts;
     if (resistible
         && has_saving_throw()
         && you.check_res_magic(ench_power) > 0)
@@ -3266,19 +3275,19 @@ void bolt::affect_player_enchantment(bool resistible)
             if (mon && !mon->observable())
             {
                 mprf("Something tries to affect you, but you %s.",
-                     you.res_magic() == MAG_IMMUNE ? "are unaffected"
+                     you.res_magic(opts) == MAG_IMMUNE ? "are unaffected"
                                                    : "resist");
                 need_msg = false;
             }
         }
         if (need_msg)
         {
-            if (you.res_magic() == MAG_IMMUNE)
+            if (you.res_magic(opts) == MAG_IMMUNE)
                 canned_msg(MSG_YOU_UNAFFECTED);
             else
             {
                 // the message reflects the level of difficulty resisting.
-                const int margin = you.res_magic() - ench_power;
+                const int margin = you.res_magic(opts) - ench_power;
                 mprf("You%s", you.resist_margin_phrase(margin).c_str());
             }
         }
@@ -3649,6 +3658,7 @@ void bolt::affect_actor(actor *act)
 
 void bolt::affect_player()
 {
+    option_list opts;
     hit_count[MID_PLAYER]++;
 
     // Explosions only have an effect during their explosion phase.
@@ -3808,7 +3818,7 @@ void bolt::affect_player()
     if (origin_spell == SPELL_STICKY_FLAME
         || origin_spell == SPELL_STICKY_FLAME_RANGE)
     {
-        if (!player_res_sticky_flame())
+        if (!you.res_sticky_flame(opts))
         {
             napalm_player(random2avg(7, 3) + 1, get_source_name(), aux_source);
             was_affected = true;
@@ -4983,6 +4993,7 @@ bool bolt::ignores_monster(const monster* mon) const
 
 bool bolt::has_saving_throw() const
 {
+    option_list opts;
     if (aimed_at_feet)
         return false;
 
@@ -5020,6 +5031,7 @@ bool bolt::has_saving_throw() const
 bool ench_flavour_affects_monster(beam_type flavour, const monster* mon,
                                   bool intrinsic_only)
 {
+    option_list opts;
     bool rc = true;
     switch (flavour)
     {
@@ -5047,7 +5059,7 @@ bool ench_flavour_affects_monster(beam_type flavour, const monster* mon,
         break;
 
     case BEAM_AGONY:
-        rc = !mon->res_torment();
+        rc = !mon->res_torment(opts);
         break;
 
     case BEAM_HIBERNATION:
@@ -5069,7 +5081,7 @@ bool ench_flavour_affects_monster(beam_type flavour, const monster* mon,
         break;
 
     case BEAM_VIRULENCE:
-        rc = (mon->res_poison() < 3);
+        rc = (mon->res_poison(opts) < 3);
         break;
 
     case BEAM_DRAIN_MAGIC:
@@ -5141,6 +5153,7 @@ bool enchant_monster_invisible(monster* mon, const string &how)
 
 mon_resist_type bolt::try_enchant_monster(monster* mon, int &res_margin)
 {
+    option_list opts;
     // Early out if the enchantment is meaningless.
     if (!ench_flavour_affects_monster(flavour, mon))
         return MON_UNAFFECTED;
@@ -5166,7 +5179,7 @@ mon_resist_type bolt::try_enchant_monster(monster* mon, int &res_margin)
             if (mon->check_res_magic(ench_power) > 0)
             {
                 // Note only actually used by messages in this case.
-                res_margin = mon->res_magic() - ench_power_stepdown(ench_power);
+                res_margin = mon->res_magic(opts) - ench_power_stepdown(ench_power);
                 return MON_RESIST;
             }
         }
@@ -5177,6 +5190,7 @@ mon_resist_type bolt::try_enchant_monster(monster* mon, int &res_margin)
 
 mon_resist_type bolt::apply_enchantment_to_monster(monster* mon)
 {
+    option_list opts;
     // Gigantic-switches-R-Us
     switch (flavour)
     {
@@ -5353,7 +5367,7 @@ mon_resist_type bolt::apply_enchantment_to_monster(monster* mon)
         return MON_AFFECTED;
 
     case BEAM_PETRIFY:
-        if (mon->res_petrify())
+        if (mon->res_petrify(opts))
             return MON_UNAFFECTED;
 
         apply_bolt_petrify(mon);

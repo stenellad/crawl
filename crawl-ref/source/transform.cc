@@ -287,7 +287,7 @@ string Form::get_uc_attack_name(string default_name) const
 /**
  * How many levels of resistance against fire does this form provide?
  */
-int Form::res_fire() const
+int Form::res_fire(option_list options) const
 {
     return get_resist(resists, MR_RES_FIRE);
 }
@@ -295,7 +295,7 @@ int Form::res_fire() const
 /**
  * How many levels of resistance against cold does this form provide?
  */
-int Form::res_cold() const
+int Form::res_cold(option_list opts) const
 {
     return get_resist(resists, MR_RES_COLD);
 }
@@ -303,7 +303,7 @@ int Form::res_cold() const
 /**
  * How many levels of resistance against negative energy does this form give?
  */
-int Form::res_neg() const
+int Form::res_neg(option_list opts) const
 {
     return get_resist(resists, MR_RES_NEG);
 }
@@ -311,7 +311,7 @@ int Form::res_neg() const
 /**
  * Does this form provide resistance to electricity?
  */
-bool Form::res_elec() const
+bool Form::res_elec(option_list opts) const
 {
     return get_resist(resists, MR_RES_ELEC);
 }
@@ -319,7 +319,7 @@ bool Form::res_elec() const
 /**
  * How many levels of resistance against poison does this form give?
  */
-int Form::res_pois() const
+int Form::res_pois(option_list opts) const
 {
     return get_resist(resists, MR_RES_POISON);
 }
@@ -327,7 +327,7 @@ int Form::res_pois() const
 /**
  * Does this form provide resistance to rotting?
  */
-bool Form::res_rot() const
+bool Form::res_rot(option_list opts) const
 {
     return get_resist(resists, MR_RES_ROTTING);
 }
@@ -335,7 +335,7 @@ bool Form::res_rot() const
 /**
  * Does this form provide resistance against acid?
  */
-bool Form::res_acid() const
+bool Form::res_acid(option_list opts) const
 {
     return get_resist(resists, MR_RES_ACID);
 }
@@ -343,7 +343,7 @@ bool Form::res_acid() const
 /**
  * Does this form provide resistance to sticky flame?
  */
-bool Form::res_sticky_flame() const
+bool Form::res_sticky_flame(option_list opts) const
 {
     return get_resist(resists, MR_RES_STICKY_FLAME);
 }
@@ -351,7 +351,7 @@ bool Form::res_sticky_flame() const
 /**
  * Does this form provide resistance to petrification?
  */
-bool Form::res_petrify() const
+bool Form::res_petrify(option_list opts) const
 {
     return get_resist(resists, MR_RES_PETRIFY);
 }
@@ -659,7 +659,7 @@ public:
     /**
      * How many levels of resistance against fire does this form provide?
      */
-    int res_fire() const override
+    int res_fire(option_list options) const override
     {
         switch (dragon_form_dragon_type())
         {
@@ -675,7 +675,7 @@ public:
     /**
      * How many levels of resistance against cold does this form provide?
      */
-    int res_cold() const override
+    int res_cold(option_list opts) const override
     {
         switch (dragon_form_dragon_type())
         {

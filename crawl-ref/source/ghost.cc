@@ -275,6 +275,7 @@ void ghost_demon::init_player_ghost(bool actual_ghost)
     unwind_var<FixedBitVector<NUM_EQUIP>> melded(you.melded,
                                                  FixedBitVector<NUM_EQUIP>());
     unwind_var<bool> fishtail(you.fishtail, false);
+    option_list opts;
 
     name   = you.your_name;
     max_hp = min(get_real_hp(false, false), MAX_GHOST_HP);
@@ -284,18 +285,18 @@ void ghost_demon::init_player_ghost(bool actual_ghost)
 
     see_invis      = you.can_see_invisible();
     resists        = 0;
-    set_resist(resists, MR_RES_FIRE, player_res_fire());
-    set_resist(resists, MR_RES_COLD, player_res_cold());
-    set_resist(resists, MR_RES_ELEC, player_res_electricity());
+    set_resist(resists, MR_RES_FIRE, you.res_fire(opts));
+    set_resist(resists, MR_RES_COLD, you.res_cold(opts));
+    set_resist(resists, MR_RES_ELEC, you.res_elec(opts));
     // clones might lack innate rPois, copy it. pghosts don't care.
-    set_resist(resists, MR_RES_POISON, player_res_poison());
-    set_resist(resists, MR_RES_NEG, you.res_negative_energy());
-    set_resist(resists, MR_RES_ACID, player_res_acid());
+    set_resist(resists, MR_RES_POISON, you.res_poison(opts));
+    set_resist(resists, MR_RES_NEG, you.res_negative_energy(opts));
+    set_resist(resists, MR_RES_ACID, you.res_acid(opts));
     // multi-level for players, boolean as an innate monster resistance
-    set_resist(resists, MR_RES_STEAM, player_res_steam() ? 1 : 0);
-    set_resist(resists, MR_RES_STICKY_FLAME, player_res_sticky_flame());
-    set_resist(resists, MR_RES_ROTTING, you.res_rotting());
-    set_resist(resists, MR_RES_PETRIFY, you.res_petrify());
+    set_resist(resists, MR_RES_STEAM, you.res_steam(opts) ? 1 : 0);
+    set_resist(resists, MR_RES_STICKY_FLAME, you.res_sticky_flame(opts));
+    set_resist(resists, MR_RES_ROTTING, you.res_rotting(opts));
+    set_resist(resists, MR_RES_PETRIFY, you.res_petrify(opts));
 
     move_energy = 10;
     speed       = 10;

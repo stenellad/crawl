@@ -3020,8 +3020,9 @@ static int _hex_pow(const spell_type spell, const int hd)
  */
 int hex_chance(const spell_type spell, const int hd)
 {
+    option_list opts;
     const int capped_pow = _hex_pow(spell, hd);
-    const int chance = hex_success_chance(you.res_magic(), capped_pow,
+    const int chance = hex_success_chance(you.res_magic(opts), capped_pow,
                                           100, true);
     if (spell == SPELL_STRIP_RESISTANCE)
         return chance + (100 - chance) / 3; // ignores mr 1/3rd of the time

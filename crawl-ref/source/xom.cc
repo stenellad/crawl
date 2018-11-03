@@ -3065,6 +3065,7 @@ static xom_event_type _xom_choose_good_action(int sever, int tension)
  */
 static xom_event_type _xom_choose_bad_action(int sever, int tension)
 {
+    option_list opts;
     const bool nasty = _miscast_is_nasty(sever);
 
     if (!nasty && x_chance_in_y(3, sever))
@@ -3140,14 +3141,15 @@ static xom_event_type _xom_choose_bad_action(int sever, int tension)
 
     if (x_chance_in_y(21, sever))
     {
+        option_list opts(false, false, false, false, false, false, false, false, false);
         if (coinflip())
             return XOM_BAD_STATLOSS;
         if (coinflip())
         {
-            if (player_prot_life() < 3)
+            if (you.res_negative_energy(opts) < 3)
                 return XOM_BAD_DRAINING;
             // else choose something else
-        } else if (!player_res_torment(false))
+        } else if (!you.res_torment(opts))
             return XOM_BAD_TORMENT;
         // else choose something else
     }

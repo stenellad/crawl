@@ -361,6 +361,8 @@ public:
     // Hash seed for deterministic stuff.
     uint32_t game_seed;
 
+    option_list opts;
+
     // -------------------
     // Non-saved UI state:
     // -------------------
@@ -599,21 +601,23 @@ public:
     bool        constriction_does_damage(bool /* direct */) const override
                     { return true; };
 
-    int       has_claws(bool allow_tran = true) const override;
-    bool      has_usable_claws(bool allow_tran = true) const;
-    int       has_talons(bool allow_tran = true) const;
-    bool      has_usable_talons(bool allow_tran = true) const;
-    int       has_hooves(bool allow_tran = true) const;
-    bool      has_usable_hooves(bool allow_tran = true) const;
-    int       has_fangs(bool allow_tran = true) const;
-    int       has_usable_fangs(bool allow_tran = true) const;
-    int       has_tail(bool allow_tran = true) const;
-    int       has_usable_tail(bool allow_tran = true) const;
-    bool      has_usable_offhand() const;
-    int       has_pseudopods(bool allow_tran = true) const;
-    int       has_usable_pseudopods(bool allow_tran = true) const;
-    int       has_tentacles(bool allow_tran = true) const;
-    int       has_usable_tentacles(bool allow_tran = true) const;
+    int       has_claws             (bool allow_tran = true) const override;
+    int       has_talons            (bool allow_tran = true) const;
+    int       has_hooves            (bool allow_tran = true) const;
+    int       has_fangs             (bool allow_tran = true) const;
+    int       has_tail              (bool allow_tran = true) const;
+    int       has_pseudopods        (bool allow_tran = true) const;
+    int       has_tentacles         (bool allow_tran = true) const;
+
+    bool      has_usable_claws      (bool allow_tran = true) const;
+    bool      has_usable_talons     (bool allow_tran = true) const;
+    bool      has_usable_hooves     (bool allow_tran = true) const;
+    int       has_usable_fangs      (bool allow_tran = true) const;
+    int       has_usable_tail       (bool allow_tran = true) const;
+    int       has_usable_pseudopods (bool allow_tran = true) const;
+    int       has_usable_tentacles  (bool allow_tran = true) const;
+
+    bool      has_usable_offhand()                           const;
 
     // Information about player mutations. Implemented in mutation.cc
     int       get_base_mutation_level(mutation_type mut, bool innate=true, bool temp=true, bool normal=true) const;
@@ -738,23 +742,35 @@ public:
     int how_chaotic(bool check_spells_god) const override;
     bool is_unbreathing() const override;
     bool is_insubstantial() const override;
-    int res_acid(bool calc_unid = true) const override;
+
+    //Never true
     bool res_damnation() const override { return false; };
-    int res_fire() const override;
-    int res_steam() const override;
-    int res_cold() const override;
-    int res_elec() const override;
-    int res_poison(bool temp = true) const override;
-    int res_rotting(bool temp = true) const override;
+
+    //Resistances
+    int res_fire (option_list opts) const override;
+    int res_cold(option_list opts) const override;
+    int res_negative_energy(option_list opts) const override;
+    int res_poison(option_list opts) const override;
+    int res_elec(option_list opts) const override;
+    bool res_corr(option_list opts) const override;
+    int res_magic(option_list opts) const override;
+
+    //Derived resistances
+    int res_steam(option_list opts) const override;
+    int res_acid(option_list opts) const override;
+
+    int res_rotting(option_list opts) const override;
+    bool res_sticky_flame(option_list opts) const override;
+    bool res_petrify(option_list opts) const override;
+
     int res_water_drowning() const override;
-    bool res_sticky_flame() const override;
     int res_holy_energy() const override;
-    int res_negative_energy(bool intrinsic_only = false) const override;
-    bool res_torment() const override;
+
+    bool res_torment(option_list opts) const override;
     bool res_tornado() const override;
-    bool res_petrify(bool temp = true) const override;
+
     int res_constrict() const override;
-    int res_magic(bool /*calc_unid*/ = true) const override;
+
     bool no_tele(bool calc_unid = true, bool /*permit_id*/ = true,
                  bool blink = false) const override;
     string no_tele_reason(bool calc_unid = true, bool blink = false) const;
@@ -762,8 +778,8 @@ public:
     bool antimagic_susceptible() const override;
 
     bool gourmand(bool calc_unid = true, bool items = true) const override;
-    bool res_corr(bool calc_unid = true, bool items = true) const override;
     bool clarity(bool calc_unid = true, bool items = true) const override;
+
     bool stasis() const override;
     bool cloud_immune(bool calc_unid = true, bool items = true) const override;
 
@@ -961,38 +977,16 @@ int sanguine_armour_bonus();
 
 int player_wizardry(spell_type spell);
 
-int player_prot_life(bool calc_unid = true, bool temp = true,
-                     bool items = true);
-
 bool regeneration_is_inhibited();
 int player_regen();
 int player_mp_regen();
 void update_amulet_attunement_by_health();
 void update_mana_regen_amulet_attunement();
 
-int player_res_cold(bool calc_unid = true, bool temp = true,
-                    bool items = true);
-int player_res_acid(bool calc_unid = true, bool items = true);
-
-bool player_res_torment(bool random = true);
 bool player_kiku_res_torment();
 
 bool player_likes_chunks(bool permanently = false);
 bool player_likes_water(bool permanently = false);
-
-int player_res_electricity(bool calc_unid = true, bool temp = true,
-                           bool items = true);
-
-int player_res_fire(bool calc_unid = true, bool temp = true,
-                    bool items = true);
-int player_res_sticky_flame(bool calc_unid = true, bool temp = true,
-                            bool items = true);
-int player_res_steam(bool calc_unid = true, bool temp = true,
-                     bool items = true);
-
-int player_res_poison(bool calc_unid = true, bool temp = true,
-                      bool items = true);
-int player_res_magic(bool calc_unid = true, bool temp = true);
 
 int player_shield_class();
 int player_displayed_shield_class();

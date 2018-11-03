@@ -124,6 +124,7 @@ static void _moveto_maybe_repel_stairs()
 bool check_moveto_cloud(const coord_def& p, const string &move_verb,
                         bool *prompted)
 {
+    option_list opts;
     if (you.confused())
         return true;
     const cloud_type ctype = cloud_type_at(p);
@@ -136,7 +137,7 @@ bool check_moveto_cloud(const coord_def& p, const string &move_verb,
         if (ctype == CLOUD_STEAM)
         {
             int threshold = 20;
-            if (player_res_steam() < 0)
+            if (you.res_steam(opts) < 0)
                 threshold = threshold * 3 / 2;
             threshold = threshold * you.time_taken / BASELINE_DELAY;
             // Do prompt if we'd lose icemail, though.
@@ -1317,177 +1318,12 @@ bool player_likes_chunks(bool permanently)
            || you.get_mutation_level(MUT_CARNIVOROUS) > 0;
 }
 
-// If temp is set to false, temporary sources or resistance won't be counted.
-int player_res_fire(bool calc_unid, bool temp, bool items)
-{
-    int rf = 0;
-
-    if (items)
-    {
-        // rings of fire resistance/fire
-        rf += you.wearing(EQ_RINGS, RING_PROTECTION_FROM_FIRE, calc_unid);
-        rf += you.wearing(EQ_RINGS, RING_FIRE, calc_unid);
-
-        // rings of ice
-        rf -= you.wearing(EQ_RINGS, RING_ICE, calc_unid);
-
-        // Staves
-        rf += you.wearing(EQ_STAFF, STAFF_FIRE, calc_unid);
-
-        // body armour:
-        const item_def *body_armour = you.slot_item(EQ_BODY_ARMOUR);
-        if (body_armour)
-            rf += armour_type_prop(body_armour->sub_type, ARMF_RES_FIRE);
-
-        // ego armours
-        rf += you.wearing_ego(EQ_ALL_ARMOUR, SPARM_FIRE_RESISTANCE);
-        rf += you.wearing_ego(EQ_ALL_ARMOUR, SPARM_RESISTANCE);
-
-        // randart weapons:
-        rf += you.scan_artefacts(ARTP_FIRE, calc_unid);
-
-        // dragonskin cloak: 0.5 to draconic resistances
-        if (calc_unid && player_equip_unrand(UNRAND_DRAGONSKIN)
-            && coinflip())
-        {
-            rf++;
-        }
-    }
-
-    // species:
-    if (you.species == SP_MUMMY)
-        rf--;
-
-    // mutations:
-    rf += you.get_mutation_level(MUT_HEAT_RESISTANCE, temp);
-    rf -= you.get_mutation_level(MUT_HEAT_VULNERABILITY, temp);
-    rf -= you.get_mutation_level(MUT_TEMPERATURE_SENSITIVITY, temp);
-    rf += you.get_mutation_level(MUT_MOLTEN_SCALES, temp) == 3 ? 1 : 0;
-
-    // spells:
-    if (temp)
-    {
-        if (you.duration[DUR_RESISTANCE])
-            rf++;
-
-        if (you.duration[DUR_FIRE_SHIELD])
-            rf += 2;
-
-        if (you.duration[DUR_QAZLAL_FIRE_RES])
-            rf++;
-
-        rf += get_form()->res_fire();
-    }
-
-    if (rf > 3)
-        rf = 3;
-    if (temp && you.duration[DUR_FIRE_VULN])
-        rf--;
-    if (rf < -3)
-        rf = -3;
-
-    return rf;
-}
-
-int player_res_steam(bool calc_unid, bool temp, bool items)
-{
-    int res = 0;
-    const int rf = player_res_fire(calc_unid, temp, items);
-
-    if (you.species == SP_PALE_DRACONIAN)
-        res += 2;
-
-    if (items)
-    {
-        const item_def *body_armour = you.slot_item(EQ_BODY_ARMOUR);
-        if (body_armour)
-            res += armour_type_prop(body_armour->sub_type, ARMF_RES_STEAM) * 2;
-    }
-
-    res += rf * 2;
-
-    if (res > 2)
-        res = 2;
-
-    return res;
-}
-
-int player_res_cold(bool calc_unid, bool temp, bool items)
-{
-    int rc = 0;
-
-    if (temp)
-    {
-        if (you.duration[DUR_RESISTANCE])
-            rc++;
-
-        if (you.duration[DUR_FIRE_SHIELD])
-            rc -= 2;
-
-        if (you.duration[DUR_QAZLAL_COLD_RES])
-            rc++;
-
-        rc += get_form()->res_cold();
-
-        if (you.species == SP_VAMPIRE)
-        {
-            if (you.hunger_state <= HS_STARVING)
-                rc += 2;
-            else if (you.hunger_state < HS_SATIATED)
-                rc++;
-        }
-    }
-
-    if (items)
-    {
-        // rings of cold resistance/ice
-        rc += you.wearing(EQ_RINGS, RING_PROTECTION_FROM_COLD, calc_unid);
-        rc += you.wearing(EQ_RINGS, RING_ICE, calc_unid);
-
-        // rings of fire
-        rc -= you.wearing(EQ_RINGS, RING_FIRE, calc_unid);
-
-        // Staves
-        rc += you.wearing(EQ_STAFF, STAFF_COLD, calc_unid);
-
-        // body armour:
-        const item_def *body_armour = you.slot_item(EQ_BODY_ARMOUR);
-        if (body_armour)
-            rc += armour_type_prop(body_armour->sub_type, ARMF_RES_COLD);
-
-        // ego armours
-        rc += you.wearing_ego(EQ_ALL_ARMOUR, SPARM_COLD_RESISTANCE);
-        rc += you.wearing_ego(EQ_ALL_ARMOUR, SPARM_RESISTANCE);
-
-        // randart weapons:
-        rc += you.scan_artefacts(ARTP_COLD, calc_unid);
-
-        // dragonskin cloak: 0.5 to draconic resistances
-        if (calc_unid && player_equip_unrand(UNRAND_DRAGONSKIN) && coinflip())
-            rc++;
-    }
-
-    // mutations:
-    rc += you.get_mutation_level(MUT_COLD_RESISTANCE, temp);
-    rc -= you.get_mutation_level(MUT_COLD_VULNERABILITY, temp);
-    rc -= you.get_mutation_level(MUT_TEMPERATURE_SENSITIVITY, temp);
-    rc += you.get_mutation_level(MUT_ICY_BLUE_SCALES, temp) == 3 ? 1 : 0;
-    rc += you.get_mutation_level(MUT_SHAGGY_FUR, temp) == 3 ? 1 : 0;
-
-    if (rc < -3)
-        rc = -3;
-    else if (rc > 3)
-        rc = 3;
-
-    return rc;
-}
-
-bool player::res_corr(bool calc_unid, bool items) const
+bool player::res_corr(option_list opts) const
 {
     if (have_passive(passive_t::resist_corrosion))
         return true;
 
-    if (get_form()->res_acid())
+    if (get_form()->res_acid(opts))
         return true;
 
     if (you.duration[DUR_RESISTANCE])
@@ -1506,86 +1342,7 @@ bool player::res_corr(bool calc_unid, bool items) const
         return true;
     }
 
-    return actor::res_corr(calc_unid, items);
-}
-
-int player_res_acid(bool calc_unid, bool items)
-{
-    return you.res_corr(calc_unid, items) ? 1 : 0;
-}
-
-int player_res_electricity(bool calc_unid, bool temp, bool items)
-{
-    int re = 0;
-
-    if (items)
-    {
-        // staff
-        re += you.wearing(EQ_STAFF, STAFF_AIR, calc_unid);
-
-        // body armour:
-        const item_def *body_armour = you.slot_item(EQ_BODY_ARMOUR);
-        if (body_armour)
-            re += armour_type_prop(body_armour->sub_type, ARMF_RES_ELEC);
-
-        // randart weapons:
-        re += you.scan_artefacts(ARTP_ELECTRICITY, calc_unid);
-
-        // dragonskin cloak: 0.5 to draconic resistances
-        if (calc_unid && player_equip_unrand(UNRAND_DRAGONSKIN) && coinflip())
-            re++;
-    }
-
-    // mutations:
-    re += you.get_mutation_level(MUT_THIN_METALLIC_SCALES, temp) == 3 ? 1 : 0;
-    re += you.get_mutation_level(MUT_SHOCK_RESISTANCE, temp);
-    re -= you.get_mutation_level(MUT_SHOCK_VULNERABILITY, temp);
-
-    if (temp)
-    {
-        if (you.duration[DUR_RESISTANCE])
-            re++;
-
-        if (you.duration[DUR_QAZLAL_ELEC_RES])
-            re++;
-
-        // transformations:
-        if (get_form()->res_elec())
-            re++;
-    }
-
-    if (re > 1)
-        re = 1;
-
-    return re;
-}
-
-/**
- * Is the player character immune to torment?
- *
- * @param random    Whether to include unreliable effects (stochastic resist)
- * @return          Whether the player resists a given instance of torment; if
- *                  random is passed, the result may vary from call to call.
- */
-bool player_res_torment(bool random)
-{
-    if (you.get_mutation_level(MUT_TORMENT_RESISTANCE))
-        return true;
-
-    if (random
-        && you.get_mutation_level(MUT_STOCHASTIC_TORMENT_RESISTANCE)
-        && coinflip())
-    {
-        return true;
-    }
-
-    return get_form()->res_neg() == 3
-           || you.species == SP_VAMPIRE && you.hunger_state <= HS_STARVING
-           || you.petrified()
-#if TAG_MAJOR_VERSION == 34
-           || player_equip_unrand(UNRAND_ETERNAL_TORMENT)
-#endif
-           ;
+    return actor::res_corr(opts);
 }
 
 // Kiku protects you from torment to a degree.
@@ -1594,114 +1351,6 @@ bool player_kiku_res_torment()
     // no protection during pain branding weapon
     return have_passive(passive_t::resist_torment)
            && !(you_worship(GOD_KIKUBAAQUDGHA) && you.gift_timeout);
-}
-
-// If temp is set to false, temporary sources or resistance won't be counted.
-int player_res_poison(bool calc_unid, bool temp, bool items)
-{
-    switch (you.undead_state(temp))
-    {
-        case US_ALIVE:
-            break;
-        case US_HUNGRY_DEAD: //ghouls
-        case US_UNDEAD: // mummies & lichform
-            return 3;
-        case US_SEMI_UNDEAD: // vampire
-            if (you.hunger_state <= HS_STARVING) // XXX: && temp?
-                return 3;
-            break;
-    }
-
-    if (you.is_nonliving(temp)
-        || temp && get_form()->res_pois() == 3
-        || items && player_equip_unrand(UNRAND_OLGREB)
-        || temp && you.duration[DUR_DIVINE_STAMINA])
-    {
-        return 3;
-    }
-
-    int rp = 0;
-
-    if (items)
-    {
-        // rings of poison resistance
-        rp += you.wearing(EQ_RINGS, RING_POISON_RESISTANCE, calc_unid);
-
-        // Staves
-        rp += you.wearing(EQ_STAFF, STAFF_POISON, calc_unid);
-
-        // ego armour:
-        rp += you.wearing_ego(EQ_ALL_ARMOUR, SPARM_POISON_RESISTANCE);
-
-        // body armour:
-        const item_def *body_armour = you.slot_item(EQ_BODY_ARMOUR);
-        if (body_armour)
-            rp += armour_type_prop(body_armour->sub_type, ARMF_RES_POISON);
-
-        // rPois+ artefacts
-        rp += you.scan_artefacts(ARTP_POISON, calc_unid);
-
-        // dragonskin cloak: 0.5 to draconic resistances
-        if (calc_unid && player_equip_unrand(UNRAND_DRAGONSKIN) && coinflip())
-            rp++;
-    }
-
-    // mutations:
-    rp += you.get_mutation_level(MUT_POISON_RESISTANCE, temp);
-    rp += you.get_mutation_level(MUT_SLIMY_GREEN_SCALES, temp) == 3 ? 1 : 0;
-
-    // Only thirsty vampires are naturally poison resistant.
-    // XXX: && temp?
-    if (you.species == SP_VAMPIRE && you.hunger_state < HS_SATIATED)
-        rp++;
-
-    if (temp)
-    {
-        // potions/cards:
-        if (you.duration[DUR_RESISTANCE])
-            rp++;
-
-        if (get_form()->res_pois() > 0)
-            rp++;
-    }
-
-    // Cap rPois at + before vulnerability effects are applied
-    // (so carrying multiple rPois effects is never useful)
-    rp = min(1, rp);
-
-    if (temp)
-    {
-        if (get_form()->res_pois() < 0)
-            rp--;
-
-        if (you.duration[DUR_POISON_VULN])
-            rp--;
-    }
-
-    // don't allow rPois--, etc.
-    rp = max(-1, rp);
-
-    return rp;
-}
-
-int player_res_sticky_flame(bool calc_unid, bool temp, bool items)
-{
-    int rsf = 0;
-
-    // dragonskin cloak: 0.5 to draconic resistances
-    if (items && calc_unid
-        && player_equip_unrand(UNRAND_DRAGONSKIN) && coinflip())
-    {
-        rsf++;
-    }
-
-    if (get_form()->res_sticky_flame())
-        rsf++;
-
-    if (rsf > 1)
-        rsf = 1;
-
-    return rsf;
 }
 
 int player_spec_death()
@@ -1822,88 +1471,6 @@ int player_energy()
     pe += you.wearing(EQ_STAFF, STAFF_ENERGY);
 
     return pe;
-}
-
-// If temp is set to false, temporary sources of resistance won't be
-// counted.
-int player_prot_life(bool calc_unid, bool temp, bool items)
-{
-    int pl = 0;
-
-    // Hunger is temporary, true, but that's something you can control,
-    // especially as life protection only increases the hungrier you
-    // get.
-    if (you.species == SP_VAMPIRE)
-    {
-        switch (you.hunger_state)
-        {
-        case HS_FAINTING:
-        case HS_STARVING:
-            pl = 3;
-            break;
-        case HS_NEAR_STARVING:
-        case HS_VERY_HUNGRY:
-        case HS_HUNGRY:
-            pl = 2;
-            break;
-        case HS_SATIATED:
-            pl = 1;
-            break;
-        default:
-            break;
-        }
-    }
-
-    // Same here. Your piety status, and, hence, TSO's protection, is
-    // something you can more or less control.
-    if (you_worship(GOD_SHINING_ONE))
-    {
-        if (you.piety >= piety_breakpoint(1))
-            pl++;
-        if (you.piety >= piety_breakpoint(3))
-            pl++;
-        if (you.piety >= piety_breakpoint(5))
-            pl++;
-    }
-
-    if (temp)
-    {
-        pl += get_form()->res_neg();
-
-        // completely stoned, unlike statue which has some life force
-        if (you.petrified())
-            pl += 3;
-    }
-
-    if (items)
-    {
-        // rings
-        pl += you.wearing(EQ_RINGS, RING_LIFE_PROTECTION, calc_unid);
-
-        // armour (checks body armour only)
-        pl += you.wearing_ego(EQ_ALL_ARMOUR, SPARM_POSITIVE_ENERGY);
-
-        // pearl dragon counts
-        const item_def *body_armour = you.slot_item(EQ_BODY_ARMOUR);
-        if (body_armour)
-            pl += armour_type_prop(body_armour->sub_type, ARMF_RES_NEG);
-
-        // randart wpns
-        pl += you.scan_artefacts(ARTP_NEGATIVE_ENERGY, calc_unid);
-
-        // dragonskin cloak: 0.5 to draconic resistances
-        if (calc_unid && player_equip_unrand(UNRAND_DRAGONSKIN) && coinflip())
-            pl++;
-
-        pl += you.wearing(EQ_STAFF, STAFF_DEATH, calc_unid);
-    }
-
-    // undead/demonic power
-    pl += you.get_mutation_level(MUT_NEGATIVE_ENERGY_RESISTANCE, temp);
-
-    pl = min(3, pl);
-
-    return pl;
 }
 
 // New player movement speed system... allows for a bit more than
@@ -4223,7 +3790,7 @@ void paralyse_player(string source, int amount)
 bool poison_player(int amount, string source, string source_aux, bool force)
 {
     ASSERT(!crawl_state.game_is_arena());
-
+    option_list opts;
     if (crawl_state.disables[DIS_AFFLICTIONS])
         return false;
 
@@ -4233,18 +3800,18 @@ bool poison_player(int amount, string source, string source_aux, bool force)
         return false;
     }
 
-    if (player_res_poison() >= 3)
+    if (you.res_poison(opts) >= 3)
     {
         dprf("Cannot poison, you are immune!");
         return false;
     }
-    else if (!force && player_res_poison() > 0 && !one_chance_in(3))
+    else if (!force && you.res_poison(opts) > 0 && !one_chance_in(3))
         return false;
 
     const int old_value = you.duration[DUR_POISONING];
     const bool was_fatal = poison_is_lethal();
 
-    if (player_res_poison() < 0)
+    if (you.res_poison(opts) < 0)
         amount *= 2;
 
     you.duration[DUR_POISONING] += amount * 1000;
@@ -4273,7 +3840,8 @@ bool poison_player(int amount, string source, string source_aux, bool force)
 
 int get_player_poisoning()
 {
-    if (player_res_poison() < 3)
+    option_list opts;
+    if (you.res_poison(opts) < 3)
     {
         // Approximate the effect of damage shaving by giving the first
         // 25 points of poison damage for 'free'
@@ -4319,6 +3887,7 @@ static double _poison_aut_to_dur(double aut)
 
 void handle_player_poison(int delay)
 {
+    option_list opts;
     const double cur_dur = you.duration[DUR_POISONING];
     const double cur_aut = _poison_dur_to_aut(cur_dur);
 
@@ -4344,7 +3913,7 @@ void handle_player_poison(int delay)
     }
 
     // Other sources of immunity (Zin, staff of Olgreb) let poison dissipate.
-    bool do_dmg = (player_res_poison() >= 3 ? false : true);
+    bool do_dmg = (you.res_poison(opts) >= 3 ? false : true);
 
     int dmg = (you.duration[DUR_POISONING] / 1000)
                - ((you.duration[DUR_POISONING] - decrease) / 1000);
@@ -4486,9 +4055,10 @@ int poison_survival()
 
 bool miasma_player(actor *who, string source_aux)
 {
+    option_list opts;
     ASSERT(!crawl_state.game_is_arena());
 
-    if (you.res_rotting() || you.duration[DUR_DEATHS_DOOR])
+    if (you.res_rotting(opts) || you.duration[DUR_DEATHS_DOOR])
         return false;
 
     if (you.duration[DUR_DIVINE_STAMINA] > 0)
@@ -4519,8 +4089,9 @@ bool miasma_player(actor *who, string source_aux)
 bool napalm_player(int amount, string source, string source_aux)
 {
     ASSERT(!crawl_state.game_is_arena());
+    option_list opts;
 
-    if (player_res_sticky_flame() || amount <= 0 || you.duration[DUR_WATER_HOLD] || feat_is_watery(grd(you.pos())))
+    if (you.res_sticky_flame(opts) || amount <= 0 || you.duration[DUR_WATER_HOLD] || feat_is_watery(grd(you.pos())))
         return false;
 
     const int old_value = you.duration[DUR_LIQUID_FLAMES];
@@ -4625,8 +4196,9 @@ void dec_slow_player(int delay)
 
     if (you.duration[DUR_SLOW] <= BASELINE_DELAY)
     {
-        mprf(MSGCH_DURATION, "You feel yourself speed up.");
         you.duration[DUR_SLOW] = 0;
+        if (!have_stat_zero())
+            mprf(MSGCH_DURATION, "You feel yourself speed up.");
     }
 }
 
@@ -6155,29 +5727,221 @@ bool player::is_insubstantial() const
     return form == transformation::wisp;
 }
 
-int player::res_acid(bool calc_unid) const
+int player::res_acid(option_list opts) const
 {
-    return player_res_acid(calc_unid);
+    return you.res_corr(opts) ? 1 : 0;
 }
 
-int player::res_fire() const
+int player::res_fire(option_list opts) const
 {
-    return player_res_fire();
+    int rf = 0;
+
+
+    if (opts.items)
+    {
+        // rings of fire resistance/fire
+        rf += you.wearing(EQ_RINGS, RING_PROTECTION_FROM_FIRE, opts.calc_unid);
+        rf += you.wearing(EQ_RINGS, RING_FIRE, opts.calc_unid);
+
+        // rings of ice
+        rf -= you.wearing(EQ_RINGS, RING_ICE, opts.calc_unid);
+
+        // Staves
+        rf += you.wearing(EQ_STAFF, STAFF_FIRE, opts.calc_unid);
+
+        // body armour:
+        const item_def *body_armour = you.slot_item(EQ_BODY_ARMOUR);
+        if (body_armour)
+            rf += armour_type_prop(body_armour->sub_type, ARMF_RES_FIRE);
+
+        // ego armours
+        rf += you.wearing_ego(EQ_ALL_ARMOUR, SPARM_FIRE_RESISTANCE);
+        rf += you.wearing_ego(EQ_ALL_ARMOUR, SPARM_RESISTANCE);
+
+        // randart weapons:
+        rf += you.scan_artefacts(ARTP_FIRE, opts.calc_unid);
+
+        // dragonskin cloak: 0.5 to draconic resistances
+        if (opts.calc_unid && player_equip_unrand(UNRAND_DRAGONSKIN)
+            && coinflip())
+        {
+            rf++;
+        }
+    }
+
+    // species:
+    if (you.species == SP_MUMMY)
+        rf--;
+
+    // mutations:
+    rf += you.get_mutation_level(MUT_HEAT_RESISTANCE, opts.mutations);
+    rf -= you.get_mutation_level(MUT_HEAT_VULNERABILITY, opts.mutations);
+    rf -= you.get_mutation_level(MUT_TEMPERATURE_SENSITIVITY, opts.mutations);
+    rf += you.get_mutation_level(MUT_MOLTEN_SCALES, opts.mutations) == 3 ? 1 : 0;
+
+    // spells:
+    if (opts.spells)
+    {
+        if (you.duration[DUR_RESISTANCE])
+            rf++;
+
+        if (you.duration[DUR_FIRE_SHIELD])
+            rf += 2;
+
+        if (you.duration[DUR_QAZLAL_FIRE_RES])
+            rf++;
+
+        rf += get_form()->res_fire(opts);
+    }
+
+    if (rf > 3)
+        rf = 3;
+    if (opts.temp && you.duration[DUR_FIRE_VULN])
+        rf--;
+    if (rf < -3)
+        rf = -3;
+
+    return rf;
 }
 
-int player::res_steam() const
+int player::res_steam(option_list opts) const
 {
-    return player_res_steam();
+    int res = 0;
+
+    const int rf = you.res_fire(opts);
+
+    if (you.species == SP_PALE_DRACONIAN)
+        res += 2;
+
+    if (opts.items)
+    {
+        const item_def *body_armour = you.slot_item(EQ_BODY_ARMOUR);
+        if (body_armour)
+            res += armour_type_prop(body_armour->sub_type, ARMF_RES_STEAM) * 2;
+    }
+
+    res += rf * 2;
+
+    if (res > 2)
+        res = 2;
+
+    return res;
 }
 
-int player::res_cold() const
+int player::res_cold(option_list opts) const
 {
-    return player_res_cold();
+    int rc = 0;
+
+    if (opts.temp)
+    {
+        if (you.duration[DUR_RESISTANCE])
+            rc++;
+
+        if (you.duration[DUR_FIRE_SHIELD])
+            rc -= 2;
+
+        if (you.duration[DUR_QAZLAL_COLD_RES])
+            rc++;
+
+        rc += get_form()->res_cold(opts);
+
+        if (you.species == SP_VAMPIRE)
+        {
+            if (you.hunger_state <= HS_STARVING)
+                rc += 2;
+            else if (you.hunger_state < HS_SATIATED)
+                rc++;
+        }
+    }
+
+    if (opts.items)
+    {
+        // rings of cold resistance/ice
+        rc += you.wearing(EQ_RINGS, RING_PROTECTION_FROM_COLD, opts.calc_unid);
+        rc += you.wearing(EQ_RINGS, RING_ICE, opts.calc_unid);
+
+        // rings of fire
+        rc -= you.wearing(EQ_RINGS, RING_FIRE, opts.calc_unid);
+
+        // Staves
+        rc += you.wearing(EQ_STAFF, STAFF_COLD, opts.calc_unid);
+
+        // body armour:
+        const item_def *body_armour = you.slot_item(EQ_BODY_ARMOUR);
+        if (body_armour)
+            rc += armour_type_prop(body_armour->sub_type, ARMF_RES_COLD);
+
+        // ego armours
+        rc += you.wearing_ego(EQ_ALL_ARMOUR, SPARM_COLD_RESISTANCE);
+        rc += you.wearing_ego(EQ_ALL_ARMOUR, SPARM_RESISTANCE);
+
+        // randart weapons:
+        rc += you.scan_artefacts(ARTP_COLD, opts.calc_unid);
+
+        // dragonskin cloak: 0.5 to draconic resistances
+        if (opts.calc_unid && player_equip_unrand(UNRAND_DRAGONSKIN) && coinflip())
+            rc++;
+    }
+
+    // mutations:
+    rc += you.get_mutation_level(MUT_COLD_RESISTANCE, opts.temp);
+    rc -= you.get_mutation_level(MUT_COLD_VULNERABILITY, opts.temp);
+    rc -= you.get_mutation_level(MUT_TEMPERATURE_SENSITIVITY, opts.temp);
+    rc += you.get_mutation_level(MUT_ICY_BLUE_SCALES, opts.temp) == 3 ? 1 : 0;
+    rc += you.get_mutation_level(MUT_SHAGGY_FUR, opts.temp) == 3 ? 1 : 0;
+
+    if (rc < -3)
+        rc = -3;
+    else if (rc > 3)
+        rc = 3;
+
+    return rc;
 }
 
-int player::res_elec() const
+int player::res_elec(option_list opts) const
 {
-    return player_res_electricity();
+    int re = 0;
+
+    if (opts.items)
+    {
+        // staff
+        re += you.wearing(EQ_STAFF, STAFF_AIR, opts.calc_unid);
+
+        // body armour:
+        const item_def *body_armour = you.slot_item(EQ_BODY_ARMOUR);
+        if (body_armour)
+            re += armour_type_prop(body_armour->sub_type, ARMF_RES_ELEC);
+
+        // randart weapons:
+        re += you.scan_artefacts(ARTP_ELECTRICITY, opts.calc_unid);
+
+        // dragonskin cloak: 0.5 to draconic resistances
+        if (opts.calc_unid && player_equip_unrand(UNRAND_DRAGONSKIN) && coinflip())
+            re++;
+    }
+
+    // mutations:
+    re += you.get_mutation_level(MUT_THIN_METALLIC_SCALES, opts.temp) == 3 ? 1 : 0;
+    re += you.get_mutation_level(MUT_SHOCK_RESISTANCE, opts.temp);
+    re -= you.get_mutation_level(MUT_SHOCK_VULNERABILITY, opts.temp);
+
+    if (opts.temp)
+    {
+        if (you.duration[DUR_RESISTANCE])
+            re++;
+
+        if (you.duration[DUR_QAZLAL_ELEC_RES])
+            re++;
+
+        // transformations:
+        if (get_form()->res_elec(opts))
+            re++;
+    }
+
+    if (re > 1)
+        re = 1;
+
+    return re;
 }
 
 int player::res_water_drowning() const
@@ -6195,21 +5959,104 @@ int player::res_water_drowning() const
     return rw;
 }
 
-int player::res_poison(bool temp) const
+int player::res_poison(option_list opts) const
 {
-    return player_res_poison(true, temp);
-}
 
-int player::res_rotting(bool temp) const
-{
-    if (get_mutation_level(MUT_ROT_IMMUNITY)
-        || is_nonliving(temp)
-        || temp && get_form()->res_rot())
+    switch (you.undead_state(opts.temp))
+    {
+    case US_ALIVE:
+        break;
+    case US_HUNGRY_DEAD: //ghouls
+    case US_UNDEAD: // mummies & lichform
+        return 3;
+    case US_SEMI_UNDEAD: // vampire
+        if (you.hunger_state <= HS_STARVING) // XXX: && temp?
+            return 3;
+        break;
+    }
+
+    if (you.is_nonliving(opts.temp)
+        || opts.temp && get_form()->res_pois(opts) == 3
+        || opts.items && player_equip_unrand(UNRAND_OLGREB)
+        || opts.temp && you.duration[DUR_DIVINE_STAMINA])
     {
         return 3;
     }
 
-    switch (undead_state(temp))
+    int rp = 0;
+
+    if (opts.items)
+    {
+        // rings of poison resistance
+        rp += you.wearing(EQ_RINGS, RING_POISON_RESISTANCE, opts.calc_unid);
+
+        // Staves
+        rp += you.wearing(EQ_STAFF, STAFF_POISON, opts.calc_unid);
+
+        // ego armour:
+        rp += you.wearing_ego(EQ_ALL_ARMOUR, SPARM_POISON_RESISTANCE);
+
+        // body armour:
+        const item_def *body_armour = you.slot_item(EQ_BODY_ARMOUR);
+        if (body_armour)
+            rp += armour_type_prop(body_armour->sub_type, ARMF_RES_POISON);
+
+        // rPois+ artefacts
+        rp += you.scan_artefacts(ARTP_POISON, opts.calc_unid);
+
+        // dragonskin cloak: 0.5 to draconic resistances
+        if (opts.calc_unid && player_equip_unrand(UNRAND_DRAGONSKIN) && coinflip())
+            rp++;
+    }
+
+    // mutations:
+    rp += you.get_mutation_level(MUT_POISON_RESISTANCE, opts.temp);
+    rp += you.get_mutation_level(MUT_SLIMY_GREEN_SCALES, opts.temp) == 3 ? 1 : 0;
+
+    // Only thirsty vampires are naturally poison resistant.
+    // XXX: && temp?
+    if (you.species == SP_VAMPIRE && you.hunger_state < HS_SATIATED)
+        rp++;
+
+    if (opts.temp)
+    {
+        // potions/cards:
+        if (you.duration[DUR_RESISTANCE])
+            rp++;
+
+        if (get_form()->res_pois(opts) > 0)
+            rp++;
+    }
+
+    // Cap rPois at + before vulnerability effects are applied
+    // (so carrying multiple rPois effects is never useful)
+    rp = min(1, rp);
+
+    if (opts.temp)
+    {
+        if (get_form()->res_pois(opts) < 0)
+            rp--;
+
+        if (you.duration[DUR_POISON_VULN])
+            rp--;
+    }
+
+    // don't allow rPois--, etc.
+    rp = max(-1, rp);
+
+    return rp;
+}
+
+int player::res_rotting(option_list opts) const
+{
+    if (get_mutation_level(MUT_ROT_IMMUNITY)
+        || is_nonliving(opts.temp)
+        || opts.temp && get_form()->res_rot(opts))
+    {
+        return 3;
+    }
+
+    switch (undead_state(opts.temp))
     {
     default:
     case US_ALIVE:
@@ -6219,7 +6066,7 @@ int player::res_rotting(bool temp) const
         return 1; // rottable by Zin, not by necromancy
 
     case US_SEMI_UNDEAD:
-        if (temp && hunger_state < HS_SATIATED)
+        if (opts.temp && hunger_state < HS_SATIATED)
             return 1;
         return 0; // no permanent resistance
 
@@ -6228,9 +6075,24 @@ int player::res_rotting(bool temp) const
     }
 }
 
-bool player::res_sticky_flame() const
+bool player::res_sticky_flame(option_list opts) const
 {
-    return player_res_sticky_flame();
+    int rsf = 0;
+
+    // dragonskin cloak: 0.5 to draconic resistances
+    if (opts.items && opts.calc_unid
+        && player_equip_unrand(UNRAND_DRAGONSKIN) && coinflip())
+    {
+        rsf++;
+    }
+
+    if (get_form()->res_sticky_flame(opts))
+        rsf++;
+
+    if (rsf > 1)
+        rsf = 1;
+
+    return rsf;
 }
 
 int player::res_holy_energy() const
@@ -6244,14 +6106,113 @@ int player::res_holy_energy() const
     return 0;
 }
 
-int player::res_negative_energy(bool intrinsic_only) const
+int player::res_negative_energy(option_list opts) const
 {
-    return player_prot_life(!intrinsic_only, true, !intrinsic_only);
+
+    int pl = 0;
+
+    // Hunger is temporary, true, but that's something you can control,
+    // especially as life protection only increases the hungrier you
+    // get.
+    if (you.species == SP_VAMPIRE)
+    {
+        switch (you.hunger_state)
+        {
+        case HS_FAINTING:
+        case HS_STARVING:
+            pl = 3;
+            break;
+        case HS_NEAR_STARVING:
+        case HS_VERY_HUNGRY:
+        case HS_HUNGRY:
+            pl = 2;
+            break;
+        case HS_SATIATED:
+            pl = 1;
+            break;
+        default:
+            break;
+        }
+    }
+
+    // Same here. Your piety status, and, hence, TSO's protection, is
+    // something you can more or less control.
+    if (you_worship(GOD_SHINING_ONE))
+    {
+        if (you.piety >= piety_breakpoint(1))
+            pl++;
+        if (you.piety >= piety_breakpoint(3))
+            pl++;
+        if (you.piety >= piety_breakpoint(5))
+            pl++;
+    }
+
+    if (opts.temp)
+    {
+        pl += get_form()->res_neg(opts);
+
+        // completely stoned, unlike statue which has some life force
+        if (you.petrified())
+            pl += 3;
+    }
+
+    if (opts.items)
+    {
+        // rings
+        pl += you.wearing(EQ_RINGS, RING_LIFE_PROTECTION, opts.calc_unid);
+
+        // armour (checks body armour only)
+        pl += you.wearing_ego(EQ_ALL_ARMOUR, SPARM_POSITIVE_ENERGY);
+
+        // pearl dragon counts
+        const item_def *body_armour = you.slot_item(EQ_BODY_ARMOUR);
+        if (body_armour)
+            pl += armour_type_prop(body_armour->sub_type, ARMF_RES_NEG);
+
+        // randart wpns
+        pl += you.scan_artefacts(ARTP_NEGATIVE_ENERGY, opts.calc_unid);
+
+        // dragonskin cloak: 0.5 to draconic resistances
+        if (opts.calc_unid && player_equip_unrand(UNRAND_DRAGONSKIN) && coinflip())
+            pl++;
+
+        pl += you.wearing(EQ_STAFF, STAFF_DEATH, opts.calc_unid);
+    }
+
+    // undead/demonic power
+    pl += you.get_mutation_level(MUT_NEGATIVE_ENERGY_RESISTANCE, opts.temp);
+
+    pl = min(3, pl);
+
+    return pl;
 }
 
-bool player::res_torment() const
+/**
+ * Is the player character immune to torment?
+ *
+ * @param random    Whether to include unreliable effects (stochastic resist)
+ * @return          Whether the player resists a given instance of torment; if
+ *                  random is passed, the result may vary from call to call.
+ */
+bool player::res_torment(option_list opts) const
 {
-    return player_res_torment();
+    if (you.get_mutation_level(MUT_TORMENT_RESISTANCE))
+        return true;
+
+    if (opts.random
+        && you.get_mutation_level(MUT_STOCHASTIC_TORMENT_RESISTANCE)
+        && coinflip())
+    {
+        return true;
+    }
+
+    return get_form()->res_neg(opts) == 3
+        || you.species == SP_VAMPIRE && you.hunger_state <= HS_STARVING
+        || you.petrified()
+#if TAG_MAJOR_VERSION == 34
+        || player_equip_unrand(UNRAND_ETERNAL_TORMENT)
+#endif
+        ;
 }
 
 bool player::res_tornado() const
@@ -6260,10 +6221,10 @@ bool player::res_tornado() const
     return duration[DUR_TORNADO] ? 1 : 0;
 }
 
-bool player::res_petrify(bool temp) const
+bool player::res_petrify(option_list opts) const
 {
     return get_mutation_level(MUT_PETRIFICATION_RESISTANCE)
-           || temp && get_form()->res_petrify();
+           || opts.temp && get_form()->res_petrify(opts);
 }
 
 int player::res_constrict() const
@@ -6277,21 +6238,15 @@ int player::res_constrict() const
     return 0;
 }
 
-int player::res_magic(bool /*calc_unid*/) const
+int player::res_magic(option_list opts) const
 {
-    return player_res_magic();
-}
-
-int player_res_magic(bool calc_unid, bool temp)
-{
-
-    if (temp && you.form == transformation::shadow)
+    if (opts.temp && you.form == transformation::shadow)
         return MAG_IMMUNE;
 
     int rm = you.experience_level * species_mr_modifier(you.species);
 
     // randarts
-    rm += MR_PIP * you.scan_artefacts(ARTP_MAGIC_RESISTANCE, calc_unid);
+    rm += MR_PIP * you.scan_artefacts(ARTP_MAGIC_RESISTANCE, opts.calc_unid);
 
     // body armour
     const item_def *body_armour = you.slot_item(EQ_BODY_ARMOUR);
@@ -6300,25 +6255,25 @@ int player_res_magic(bool calc_unid, bool temp)
 
     // ego armours
     rm += MR_PIP * you.wearing_ego(EQ_ALL_ARMOUR, SPARM_MAGIC_RESISTANCE,
-                                   calc_unid);
+        opts.calc_unid);
 
     // rings of magic resistance
-    rm += MR_PIP * you.wearing(EQ_RINGS, RING_PROTECTION_FROM_MAGIC, calc_unid);
+    rm += MR_PIP * you.wearing(EQ_RINGS, RING_PROTECTION_FROM_MAGIC, opts.calc_unid);
 
     // Mutations
     rm += MR_PIP * you.get_mutation_level(MUT_MAGIC_RESISTANCE);
     rm -= MR_PIP * you.get_mutation_level(MUT_MAGICAL_VULNERABILITY);
 
     // transformations
-    if (you.form == transformation::lich && temp)
+    if (you.form == transformation::lich && opts.temp)
         rm += MR_PIP;
 
     // Trog's Hand
-    if (you.duration[DUR_TROGS_HAND] && temp)
+    if (you.duration[DUR_TROGS_HAND] && opts.temp)
         rm += MR_PIP * 2;
 
     // Enchantment effect
-    if (you.duration[DUR_LOWERED_MR] && temp)
+    if (you.duration[DUR_LOWERED_MR] && opts.temp)
         rm /= 2;
 
     if (rm < 0)
@@ -6563,12 +6518,13 @@ void player::drain_stat(stat_type s, int amount)
 
 bool player::rot(actor *who, int amount, bool quiet, bool /*no_cleanup*/)
 {
+    option_list opts;
     ASSERT(!crawl_state.game_is_arena());
 
     if (amount <= 0)
         return false;
 
-    if (res_rotting() || duration[DUR_DEATHS_DOOR])
+    if (res_rotting(opts) || duration[DUR_DEATHS_DOOR])
     {
         mpr("You feel terrible.");
         return false;
@@ -6596,7 +6552,7 @@ bool player::rot(actor *who, int amount, bool quiet, bool /*no_cleanup*/)
 bool player::corrode_equipment(const char* corrosion_source, int degree)
 {
     // rCorr protects against 50% of corrosion.
-    if (res_corr())
+    if (res_corr(you.opts))
     {
         degree = binomial(degree, 50);
         if (!degree)
@@ -6723,9 +6679,10 @@ void player::paralyse(actor *who, int str, string source)
 
 void player::petrify(actor *who, bool force)
 {
+    option_list opts;
     ASSERT(!crawl_state.game_is_arena());
 
-    if (res_petrify() && !force)
+    if (res_petrify(opts) && !force)
     {
         canned_msg(MSG_YOU_UNAFFECTED);
         return;
@@ -6946,9 +6903,10 @@ int player::has_usable_tentacles(bool allow_tran) const
 
 bool player::sicken(int amount)
 {
+    option_list opts;
     ASSERT(!crawl_state.game_is_arena());
 
-    if (res_rotting() || amount <= 0)
+    if (res_rotting(opts) || amount <= 0)
         return false;
 
     if (duration[DUR_DIVINE_STAMINA] > 0)
@@ -8206,6 +8164,7 @@ void refresh_weapon_protection()
 // intrinsic properties?
 bool player::immune_to_hex(const spell_type hex) const
 {
+    option_list opts;
     switch (hex)
     {
     case SPELL_PARALYSIS_GAZE:
@@ -8227,11 +8186,11 @@ bool player::immune_to_hex(const spell_type hex) const
     case SPELL_CAUSE_FEAR:
         return clarity() || !(holiness() & MH_NATURAL) || berserk();
     case SPELL_PETRIFY:
-        return res_petrify();
+        return res_petrify(opts);
     case SPELL_PORKALATOR:
         return is_lifeless_undead();
     case SPELL_VIRULENCE:
-        return res_poison() == 3;
+        return res_poison(opts) == 3;
     // don't include the hidden "sleep immunity" duration
     case SPELL_SLEEP:
     case SPELL_DREAM_DUST:

@@ -626,8 +626,9 @@ static bool _kikubaaqudgha_retribution()
 
     if (x_chance_in_y(you.experience_level, 27))
     {
+        option_list opts(false, false, false, false, false, false, false, false,false);
         // torment, or 3 necromancy miscasts
-        if (!player_res_torment(false))
+        if (!you.res_torment(opts))
             torment(nullptr, TORMENT_KIKUBAAQUDGHA, you.pos());
         else
         {

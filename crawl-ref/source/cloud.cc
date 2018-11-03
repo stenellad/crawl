@@ -852,13 +852,13 @@ bool actor_cloud_immune(const actor &act, cloud_type type)
     // and the Cloud Mage too!
     if (is_harmless_cloud(type) || act.cloud_immune())
         return true;
-
+    option_list opts;
     switch (type)
     {
         case CLOUD_FIRE:
         case CLOUD_FOREST_FIRE:
             if (!act.is_player())
-                return act.res_fire() >= 3;
+                return act.res_fire(opts) >= 3;
             return you.duration[DUR_FIRE_SHIELD]
                 || you.has_mutation(MUT_FLAME_CLOUD_IMMUNITY)
                 || player_equip_unrand(UNRAND_FIRESTARTER);
@@ -866,27 +866,27 @@ bool actor_cloud_immune(const actor &act, cloud_type type)
             return act.res_holy_energy() >= 3;
         case CLOUD_COLD:
             if (!act.is_player())
-                return act.res_cold() >= 3;
+                return act.res_cold(opts) >= 3;
             return you.has_mutation(MUT_FREEZING_CLOUD_IMMUNITY)
                 || player_equip_unrand(UNRAND_FROSTBITE);
         case CLOUD_MEPHITIC:
-            return act.res_poison() > 0 || act.is_unbreathing();
+            return act.res_poison(opts) > 0 || act.is_unbreathing();
         case CLOUD_POISON:
-            return act.res_poison() > 0;
+            return act.res_poison(opts) > 0;
         case CLOUD_STEAM:
-            return act.res_steam() > 0;
+            return act.res_steam(opts) > 0;
         case CLOUD_MIASMA:
-            return act.res_rotting() > 0;
+            return act.res_rotting(opts) > 0;
         case CLOUD_PETRIFY:
-            return act.res_petrify();
+            return act.res_petrify(opts);
         case CLOUD_SPECTRAL:
             return bool(act.holiness() & MH_UNDEAD);
         case CLOUD_ACID:
-            return act.res_acid() > 0;
+            return act.res_acid(opts) > 0;
         case CLOUD_STORM:
-            return act.res_elec() >= 3;
+            return act.res_elec(opts) >= 3;
         case CLOUD_NEGATIVE_ENERGY:
-            return act.res_negative_energy() >= 3;
+            return act.res_negative_energy(opts) >= 3;
         case CLOUD_TORNADO:
             return act.res_tornado();
         case CLOUD_RAIN:
@@ -927,6 +927,7 @@ bool actor_cloud_immune(const actor &act, const cloud_struct &cloud)
 // returns MAG_IMMUNE.
 static int _actor_cloud_resist(const actor *act, const cloud_struct &cloud)
 {
+    option_list opts;
     if (actor_cloud_immune(*act, cloud))
         return MAG_IMMUNE;
     switch (cloud.type)
@@ -935,19 +936,19 @@ static int _actor_cloud_resist(const actor *act, const cloud_struct &cloud)
         return act->is_fiery()? 0 : MAG_IMMUNE;
     case CLOUD_FIRE:
     case CLOUD_FOREST_FIRE:
-        return act->res_fire();
+        return act->res_fire(opts);
     case CLOUD_HOLY:
         return act->res_holy_energy();
     case CLOUD_COLD:
-        return act->res_cold();
+        return act->res_cold(opts);
     case CLOUD_PETRIFY:
-        return act->res_petrify();
+        return act->res_petrify(opts);
     case CLOUD_ACID:
-        return act->res_acid();
+        return act->res_acid(opts);
     case CLOUD_STORM:
-        return act->res_elec();
+        return act->res_elec(opts);
     case CLOUD_NEGATIVE_ENERGY:
-        return act->res_negative_energy();
+        return act->res_negative_energy(opts);
 
     default:
         return 0;

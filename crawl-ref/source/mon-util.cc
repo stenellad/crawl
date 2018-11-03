@@ -400,7 +400,8 @@ int get_mons_resist(const monster& mon, mon_resist_flags res)
 // Returns true if the monster successfully resists this attempt to poison it.
 const bool monster_resists_this_poison(const monster& mons, bool force)
 {
-    const int res = mons.res_poison();
+    option_list opts;
+    const int res = mons.res_poison(opts);
     if (res >= 3)
         return true;
     if (!force && res >= 1 && x_chance_in_y(2, 3))
@@ -3801,6 +3802,7 @@ bool mons_has_ranged_spell(const monster& mon, bool attack_only,
 // (such as clarity or stasis)
 bool mons_has_incapacitating_spell(const monster& mon, const actor& foe)
 {
+    option_list opts;
     for (const mon_spell_slot &slot : mon.spells)
     {
         switch (slot.spell)
@@ -3821,7 +3823,7 @@ bool mons_has_incapacitating_spell(const monster& mon, const actor& foe)
             return true;
 
         case SPELL_PETRIFY:
-            if (foe.res_petrify())
+            if (foe.res_petrify(opts))
                 return true;
             break;
 
@@ -3859,6 +3861,7 @@ bool mons_has_ranged_attack(const monster& mon)
 
 bool mons_has_incapacitating_ranged_attack(const monster& mon, const actor& foe)
 {
+    option_list opts;
     if (!_mons_has_usable_ranged_weapon(&mon))
         return false;
 
@@ -3873,7 +3876,7 @@ bool mons_has_incapacitating_ranged_attack(const monster& mon, const actor& foe)
         // Not actually incapacitating, but marked as such so that
         // assassins will prefer using it while ammo remains
         case SPMSL_CURARE:
-            if (foe.res_poison() <= 0)
+            if (foe.res_poison(opts) <= 0)
                 return true;
             break;
 

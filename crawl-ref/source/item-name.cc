@@ -3289,7 +3289,7 @@ bool is_bad_item(const item_def &item, bool temp)
         case POT_STRONG_POISON:
         case POT_POISON:
             // Poison is not that bad if you're poison resistant.
-            return player_res_poison(false) <= 0
+            return you.res_poison(false) <= 0
                    || !temp && you.species == SP_VAMPIRE;
 #endif
         default:
@@ -3617,6 +3617,7 @@ bool is_useless_item(const item_def &item, bool temp)
         if (is_bad_item(item, temp))
             return true;
 
+
         switch (item.sub_type)
         {
         case AMU_RAGE:
@@ -3627,7 +3628,10 @@ bool is_useless_item(const item_def &item, bool temp)
                    || you.get_mutation_level(MUT_NO_ARTIFICE);
 
         case RING_RESIST_CORROSION:
-            return you.res_corr(false, false);
+        {
+            option_list opts(false, false);
+            return you.res_corr(opts);
+        }
 
         case AMU_THE_GOURMAND:
             return player_likes_chunks(true)
@@ -3644,8 +3648,11 @@ bool is_useless_item(const item_def &item, bool temp)
             return you.spirit_shield(false, false);
 
         case RING_LIFE_PROTECTION:
-            return player_prot_life(false, temp, false) == 3;
-
+        {
+            option_list opts(false, false, false, false,
+                             false, false, false, temp);
+            return you.res_negative_energy(opts) == 3;
+        }
         case AMU_REGENERATION:
             return you.get_mutation_level(MUT_NO_REGENERATION) > 0
                    || (temp
@@ -3661,9 +3668,12 @@ bool is_useless_item(const item_def &item, bool temp)
             return you.innate_sinv();
 
         case RING_POISON_RESISTANCE:
-            return player_res_poison(false, temp, false) > 0
-                   && (temp || you.species != SP_VAMPIRE);
-
+        {
+            option_list opts(false, false, false, false,
+                             false, false, false, temp);
+            return you.res_poison(opts) > 0
+                && (temp || you.species != SP_VAMPIRE);
+        }
         case RING_WIZARDRY:
             return you_worship(GOD_TROG);
 

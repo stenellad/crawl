@@ -49,7 +49,7 @@
 //
 // Bindings to get information on the player (clua).
 //
-
+option_list opts(false,false,false,false,false,false,false,false);
 /*** Has player done something that takes time?
  * @treturn boolean
  * @function turn_is_over
@@ -199,27 +199,27 @@ LUARET1(you_best_skill, string,
  * @treturn int resistance level
  * @function res_poison
  */
-LUARET1(you_res_poison, number, player_res_poison(false))
+LUARET1(you_res_poison, number, you.res_poison(opts))
 /*** Fire resistance (rF).
  * @treturn int resistance level
  * @function res_fire
  */
-LUARET1(you_res_fire, number, player_res_fire(false))
+LUARET1(you_res_fire, number, you.res_fire(opts))
 /*** Cold resistance (rC).
  * @treturn int resistance level
  * @function res_cold
  */
-LUARET1(you_res_cold, number, player_res_cold(false))
+LUARET1(you_res_cold, number, you.res_cold(opts))
 /*** Negative energy resistance (rN).
  * @treturn int resistance level
  * @function res_draining
  */
-LUARET1(you_res_draining, number, player_prot_life(false))
+LUARET1(you_res_draining, number, you.res_negative_energy(opts))
 /*** Electric resistance (rElec).
  * @treturn int resistance level
  * @function res_shock
  */
-LUARET1(you_res_shock, number, player_res_electricity(false))
+LUARET1(you_res_shock, number, you.res_elec(opts))
 /*** Drowning resistance (rDrown).
  * @treturn int resistance level
  * @function res_drowning

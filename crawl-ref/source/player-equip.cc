@@ -818,9 +818,13 @@ static void _equip_armour_effect(item_def& arm, bool unmeld,
             break;
 
         case SPARM_POISON_RESISTANCE:
-            if (player_res_poison(false, false, false) < 3)
+        {
+            option_list opts(false,false,false,false,
+                             false,false,false,false);
+            if (you.res_poison(opts) < 3)
                 mpr("You feel resistant to poison.");
             break;
+        }
 
         case SPARM_SEE_INVISIBLE:
             mpr("You feel perceptive.");
@@ -989,6 +993,7 @@ void lose_permafly_source()
 static void _unequip_armour_effect(item_def& item, bool meld,
                                    equipment_type slot)
 {
+    option_list opts;
     you.redraw_armour_class = true;
     you.redraw_evasion = true;
 
@@ -1008,7 +1013,7 @@ static void _unequip_armour_effect(item_def& item, bool meld,
         break;
 
     case SPARM_POISON_RESISTANCE:
-        if (player_res_poison() <= 0)
+        if (you.res_poison(opts) <= 0)
             mpr("You no longer feel resistant to poison.");
         break;
 

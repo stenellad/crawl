@@ -244,10 +244,11 @@ static const map<spell_type, mons_spell_logic> spell_to_logic = {
     } },
     { SPELL_DRAIN_LIFE, {
         [](const monster &caster) {
+            option_list opts(false);
             return _los_spell_worthwhile(caster, SPELL_DRAIN_LIFE)
                    && (!caster.friendly()
                        || !you.visible_to(&caster)
-                       || player_prot_life(false) >= 3);
+                       || you.res_negative_energy(opts) >= 3);
         },
         [](monster &caster, mon_spell_slot slot, bolt&) {
             const int splpow = mons_spellpower(caster, slot.spell);
@@ -3231,14 +3232,20 @@ static bool _tornado_vulnerable(actor* victim)
 static bool _torment_vulnerable(actor* victim)
 {
     if (victim->is_player())
-        return !player_res_torment(false);
-
-    return !victim->res_torment();
+    {
+        option_list opts(false, false, false, false, false, false, false, false, false);
+        return !you.res_torment(opts);
+    }
+    else {
+        option_list opts;
+        return !victim->res_torment(opts);
+    }
 }
 
 static bool _elec_vulnerable(actor* victim)
 {
-    return victim->res_elec() < 3;
+    option_list opts;
+    return victim->res_elec(opts) < 3;
 }
 
 static bool _mutation_vulnerable(actor* victim)
@@ -3388,11 +3395,12 @@ static bool _spray_tracer(monster *caster, int pow, bolt parent_beam, spell_type
  */
 static coord_def _mons_conjure_flame_pos(const monster &mons)
 {
+    option_list opts;
     const monster *mon = &mons; // TODO: rewriteme
     actor* foe = mon->get_foe();
     // Don't bother if our target is sufficiently fire-resistant,
     // or doesn't exist.
-    if (!foe || foe->res_fire() >= 3)
+    if (!foe || foe->res_fire(opts) >= 3)
         return coord_def(GXM+1, GYM+1);
 
     const coord_def foe_pos = foe->pos();
@@ -3636,6 +3644,7 @@ static function<bool(const monster&)> _setup_hex_check(spell_type spell)
  */
 static bool _worth_hexing(const monster &caster, spell_type spell)
 {
+    option_list opts;
     const actor* foe = caster.get_foe();
     if (!foe)
         return false; // simplifies later checks
@@ -3654,7 +3663,7 @@ static bool _worth_hexing(const monster &caster, spell_type spell)
 
     // We'll estimate the target's resistance to magic, by first getting
     // the actual value and then randomising it.
-    const int est_magic_resist = foe->res_magic() + random2(60) - 30; // +-30
+    const int est_magic_resist = foe->res_magic(opts) + random2(60) - 30; // +-30
     const int power = ench_power_stepdown(mons_spellpower(caster, spell));
 
     // Determine the amount of chance allowed by the benefit from
@@ -4535,6 +4544,7 @@ static void _mons_vampiric_drain(monster &mons, mon_spell_slot slot, bolt&)
 
 static bool _mons_cast_freeze(monster* mons)
 {
+    option_list opts;
     actor *target = mons->get_foe();
     if (!target)
         return false;
@@ -4567,9 +4577,9 @@ static bool _mons_cast_freeze(monster* mons)
     {
         target->expose_to_element(BEAM_COLD, damage);
 
-        if (target->is_monster() && target->res_cold() <= 0)
+        if (target->is_monster() && target->res_cold(opts) <= 0)
         {
-            const int stun = (1 - target->res_cold())
+            const int stun = (1 - target->res_cold(opts))
                              * random2(min(7, 2 + pow/24));
             target->as_monster()->speed_increment -= stun;
         }
@@ -7690,6 +7700,7 @@ static void _siren_sing(monster* mons, bool avatar)
 // Checks to see if a particular spell is worth casting in the first place.
 static bool _ms_waste_of_time(monster* mon, mon_spell_slot slot)
 {
+    option_list opts;
     spell_type monspell = slot.spell;
     actor *foe = mon->get_foe();
     const bool friendly = mon->friendly();
@@ -7749,7 +7760,7 @@ static bool _ms_waste_of_time(monster* mon, mon_spell_slot slot)
 
     case SPELL_DEATH_RATTLE:
     case SPELL_MIASMA_BREATH:
-        return !foe || foe->res_rotting() || no_clouds;
+        return !foe || foe->res_rotting(opts) || no_clouds;
 
     case SPELL_DISPEL_UNDEAD:
         // [ds] How is dispel undead intended to interact with vampires?
@@ -7970,7 +7981,7 @@ static bool _ms_waste_of_time(monster* mon, mon_spell_slot slot)
 
     case SPELL_CONJURE_BALL_LIGHTNING:
         return friendly
-               && (you.res_elec() <= 0 || you.hp <= 50)
+               && (you.res_elec(opts) <= 0 || you.hp <= 50)
                && !(mon->holiness() & MH_DEMONIC); // rude demons
 
     case SPELL_SEAL_DOORS:
@@ -8009,11 +8020,14 @@ static bool _ms_waste_of_time(monster* mon, mon_spell_slot slot)
         return friendly || !mons_shatter(mon, false);
 
     case SPELL_SYMBOL_OF_TORMENT:
+    {
+        option_list opts(false, false, false, false, false, false, false, false, false);
         return !_trace_los(mon, _torment_vulnerable)
-               || you.visible_to(mon)
-                  && friendly
-                  && !player_res_torment(false)
-                  && !player_kiku_res_torment();
+            || you.visible_to(mon)
+            && friendly
+            && !you.res_torment(opts)
+            && !player_kiku_res_torment();
+    }
     case SPELL_CHAIN_LIGHTNING:
         return !_trace_los(mon, _elec_vulnerable)
                 || you.visible_to(mon) && friendly; // don't zap player
@@ -8038,7 +8052,7 @@ static bool _ms_waste_of_time(monster* mon, mon_spell_slot slot)
     case SPELL_ENGLACIATION:
         return !foe
                || !mon->see_cell_no_trans(foe->pos())
-               || foe->res_cold() > 0;
+               || foe->res_cold(opts) > 0;
 
     case SPELL_OLGREBS_TOXIC_RADIANCE:
         return mon->has_ench(ENCH_TOXIC_RADIANCE)

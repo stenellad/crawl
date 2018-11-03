@@ -2129,12 +2129,13 @@ void monster::struggle_against_net()
 
 static void _ancient_zyme_sicken(monster* mons)
 {
+    option_list opts;
     if (is_sanctuary(mons->pos()))
         return;
 
     if (!is_sanctuary(you.pos())
         && !mons->wont_attack()
-        && you.res_rotting() <= 0
+        && you.res_rotting(opts) <= 0
         && !you.duration[DUR_DIVINE_STAMINA]
         && cell_see_cell(you.pos(), mons->pos(), LOS_SOLID_SEE))
     {

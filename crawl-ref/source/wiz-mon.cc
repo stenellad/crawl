@@ -46,6 +46,7 @@
 #include "view.h"
 #include "viewmap.h"
 
+
 #ifdef WIZARD
 
 // Creates a specific monster by name. Uses the same patterns as
@@ -375,6 +376,7 @@ static const char* ht_names[] =
 // Prints a number of useful (for debugging, that is) stats on monsters.
 void debug_stethoscope(int mon)
 {
+    option_list opts;
     dist stth;
     coord_def stethpos;
 
@@ -434,7 +436,7 @@ void debug_stethoscope(int mon)
          mons.hit_points, mons.max_hit_points,
          mons.base_armour_class(), mons.armour_class(),
          mons.base_evasion(), mons.evasion(),
-         mons.res_magic(),
+         mons.res_magic(opts),
          exper_value(mons),
          mons.speed, mons.speed_increment,
          mons.base_monster != MONS_NO_MONSTER ? " base=" : "",
@@ -482,18 +484,17 @@ void debug_stethoscope(int mon)
                                   summoner->name(DESC_PLAIN, true).c_str(),
                                   summoner->mindex()).c_str()
                    : ""));
-
     // Print resistances.
     mprf(MSGCH_DIAGNOSTICS, "resist: fire=%d cold=%d elec=%d pois=%d neg=%d "
                             "acid=%d sticky=%s rot=%s",
-         mons.res_fire(),
-         mons.res_cold(),
-         mons.res_elec(),
-         mons.res_poison(),
-         mons.res_negative_energy(),
-         mons.res_acid(),
-         mons.res_sticky_flame() ? "yes" : "no",
-         mons.res_rotting() ? "yes" : "no");
+         mons.res_fire(opts),
+         mons.res_cold(opts),
+         mons.res_elec(opts),
+         mons.res_poison(opts),
+         mons.res_negative_energy(opts),
+         mons.res_acid(opts),
+         mons.res_sticky_flame(opts) ? "yes" : "no",
+         mons.res_rotting(opts) ? "yes" : "no");
 
     mprf(MSGCH_DIAGNOSTICS, "ench: %s",
          mons.describe_enchantments().c_str());

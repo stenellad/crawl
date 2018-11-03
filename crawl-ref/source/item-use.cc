@@ -2875,13 +2875,13 @@ void read_scroll(item_def& scroll)
         else
         {
             cancel_scroll = (cast_controlled_blink(false, safely_cancellable)
-                             == SPRET_ABORT) && alreadyknown;
+                == SPRET_ABORT) && alreadyknown;
         }
 
         if (!cancel_scroll)
             mpr(pre_succ_msg); // ordering is iffy but w/e
     }
-        break;
+    break;
 
     case SCR_TELEPORTATION:
         you_teleport();
@@ -2923,7 +2923,7 @@ void read_scroll(item_def& scroll)
             run_uncancel(UNC_ACQUIREMENT, AQ_SCROLL);
         else
             cancel_scroll = !acquirement(OBJ_RANDOM, AQ_SCROLL, false, nullptr,
-                    false, true);
+                false, true);
         break;
 
     case SCR_FEAR:
@@ -2962,12 +2962,15 @@ void read_scroll(item_def& scroll)
         break;
 
     case SCR_TORMENT:
+    {
         torment(&you, TORMENT_SCROLL, you.pos());
 
         // This is only naughty if you know you're doing it.
         did_god_conduct(DID_EVIL, 10, item_type_known(scroll));
-        bad_effect = !player_res_torment(false);
+        option_list opts(false, false, false, false, false, false, false, false, false);
+        bad_effect = !you.res_torment(opts);
         break;
+    }
 
     case SCR_IMMOLATION:
     {

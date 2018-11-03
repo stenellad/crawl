@@ -1070,6 +1070,7 @@ void holy_word_monsters(coord_def where, int pow, holy_word_source_type source,
 void holy_word(int pow, holy_word_source_type source, const coord_def& where,
                bool silent, actor *attacker)
 {
+    option_list opts;
     if (!silent && attacker)
     {
         mprf("%s %s a Word of immense power!",
@@ -1083,14 +1084,15 @@ void holy_word(int pow, holy_word_source_type source, const coord_def& where,
 
 void torment_player(actor *attacker, torment_source_type taux)
 {
+    option_list opts;
     ASSERT(!crawl_state.game_is_arena());
 
     int hploss = 0;
 
-    if (!player_res_torment())
+    if (!you.res_torment(opts))
     {
         // Negative energy resistance can alleviate torment.
-        hploss = max(0, you.hp * (50 - player_prot_life() * 5) / 100 - 1);
+        hploss = max(0, you.hp * (50 - you.res_negative_energy(opts) * 5) / 100 - 1);
         // Statue form is only partial petrification.
         if (you.form == transformation::statue || you.species == SP_GARGOYLE)
             hploss /= 2;
@@ -1178,6 +1180,7 @@ void torment_player(actor *attacker, torment_source_type taux)
 
 void torment_cell(coord_def where, actor *attacker, torment_source_type taux)
 {
+    option_list opts;
     if (where == you.pos()
         // The Sceptre of Torment doesn't affect the  wielder.
         && !(attacker && attacker->is_player() && taux == TORMENT_SCEPTRE))
@@ -1189,7 +1192,7 @@ void torment_cell(coord_def where, actor *attacker, torment_source_type taux)
     monster* mons = monster_at(where);
     if (!mons
         || !mons->alive()
-        || mons->res_torment()
+        || mons->res_torment(opts)
         // Monsters can't currently use the sceptre, but just in case.
         || attacker
            && mons == attacker->as_monster()
@@ -1199,7 +1202,7 @@ void torment_cell(coord_def where, actor *attacker, torment_source_type taux)
     }
 
     int hploss = max(0, mons->hit_points *
-                        (50 - mons->res_negative_energy() * 5) / 100 - 1);
+                        (50 - mons->res_negative_energy(opts) * 5) / 100 - 1);
 
     if (hploss)
     {

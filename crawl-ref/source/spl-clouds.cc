@@ -276,7 +276,8 @@ void manage_fire_shield(int delay)
 
 spret_type cast_corpse_rot(bool fail)
 {
-    if (!you.res_rotting())
+    option_list opts;
+    if (!you.res_rotting(opts))
     {
         for (stack_iterator si(you.pos()); si; ++si)
         {

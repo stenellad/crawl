@@ -1556,6 +1556,7 @@ void MiscastEffect::_summoning(int severity)
 
 void MiscastEffect::_necromancy(int severity)
 {
+    option_list opts;
     if (target->is_player()
         && have_passive(passive_t::miscast_protection_necromancy))
     {
@@ -1650,7 +1651,7 @@ void MiscastEffect::_necromancy(int severity)
         switch (random2(3))
         {
         case 0:
-            if (target->res_torment())
+            if (target->res_torment(opts))
             {
                 you_msg      = "You feel weird for a moment.";
                 mon_msg_seen = "@The_monster@ has a weird expression for a "
@@ -1669,7 +1670,7 @@ void MiscastEffect::_necromancy(int severity)
             target->slow_down(act_source, 15);
             break;
         case 2:
-            if (!target->res_rotting())
+            if (!target->res_rotting(opts))
             {
                 you_msg      = "Your flesh rots away!";
                 mon_msg_seen = "@The_monster@ rots away!";
@@ -1727,7 +1728,7 @@ void MiscastEffect::_necromancy(int severity)
                 break;
 
         case 2:
-            if (target->res_torment())
+            if (target->res_torment(opts))
             {
                 you_msg      = "You feel weird for a moment.";
                 mon_msg_seen = "@The_monster@ has a weird expression for a "
@@ -2014,6 +2015,7 @@ void MiscastEffect::_transmutation(int severity)
 
 void MiscastEffect::_fire(int severity)
 {
+    option_list opts;
     switch (severity)
     {
     case 0:         // just a harmless message
@@ -2100,7 +2102,7 @@ void MiscastEffect::_fire(int severity)
         case 1:
             you_msg      = "Flames sear your flesh.";
             mon_msg_seen = "Flames sear @the_monster@.";
-            if (target->res_fire() < 0)
+            if (target->res_fire(opts) < 0)
             {
                 if (!_ouch(2 + random2avg(13, 2)))
                     return;
@@ -2198,6 +2200,7 @@ void MiscastEffect::_fire(int severity)
 
 void MiscastEffect::_ice(int severity)
 {
+    option_list opts;
     const dungeon_feature_type feat = grd(target->pos());
 
     const bool frostable_feat =
@@ -2284,7 +2287,7 @@ void MiscastEffect::_ice(int severity)
         case 1:
             you_msg      = "You are covered in a thin layer of ice.";
             mon_msg_seen = "@The_monster@ is covered in a thin layer of ice.";
-            if (target->res_cold() < 0)
+            if (target->res_cold(opts) < 0)
             {
                 if (!_ouch(4 + random2avg(5, 2)))
                     return;
@@ -2738,6 +2741,7 @@ void MiscastEffect::_air(int severity)
 
 void MiscastEffect::_poison(int severity)
 {
+    option_list opts;
     switch (severity)
     {
     case 0:         // just a harmless message
@@ -2796,7 +2800,7 @@ void MiscastEffect::_poison(int severity)
         switch (random2(2))
         {
         case 0:
-            if (target->res_poison() <= 0)
+            if (target->res_poison(opts) <= 0)
             {
                 you_msg      = "You feel sick.";
                 mon_msg_seen = "@The_monster@ looks sick.";
@@ -2824,7 +2828,7 @@ void MiscastEffect::_poison(int severity)
         switch (random2(3))
         {
         case 0:
-            if (target->res_poison() <= 0)
+            if (target->res_poison(opts) <= 0)
             {
                 you_msg      = "You feel very sick.";
                 mon_msg_seen = "@The_monster@ looks very sick.";
@@ -2845,7 +2849,7 @@ void MiscastEffect::_poison(int severity)
             break;
 
         case 2:
-            if (target->res_poison() >= 3)
+            if (target->res_poison(opts) >= 3)
             {
                 you_msg        = "You feel rather nauseous for a moment.";
                 mon_msg_seen   = "@The_monster@ looks rather nauseous for a moment.";
@@ -2874,7 +2878,7 @@ void MiscastEffect::_poison(int severity)
         switch (random2(target->is_player() ? 3 : 2))
         {
         case 0:
-            if (target->res_poison() <= 0)
+            if (target->res_poison(opts) <= 0)
             {
                 you_msg      = "You feel incredibly sick.";
                 mon_msg_seen = "@The_monster@ looks incredibly sick.";
@@ -2893,7 +2897,7 @@ void MiscastEffect::_poison(int severity)
             _big_cloud(CLOUD_POISON, 20, 7 + random2(7));
             break;
         case 2:
-            if (player_res_poison() > 0)
+            if (you.res_poison(opts) > 0)
                 canned_msg(MSG_NOTHING_HAPPENS);
             else
                 lose_stat(STAT_RANDOM, 1 + random2avg(5, 2));

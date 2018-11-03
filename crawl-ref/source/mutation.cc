@@ -689,8 +689,9 @@ string describe_mutations(bool drop_title)
     // _dragon_abil should get called on all draconian fake muts would break.
     if (species_is_draconian(you.species))
         result += "You cannot fit into any form of body armour.\n";
-
-    if (player_res_poison(false, false, false) == 3)
+    option_list opts(false, false, false, false,
+                     false, false, false, false);
+    if (you.res_poison(opts) == 3)
         result += "You are immune to poison.\n";
 
     result += "</lightblue>";
@@ -2262,7 +2263,7 @@ string mutation_desc(mutation_type mut, int level, bool colour,
             const bool demonspawn = (you.species == SP_DEMONSPAWN);
             const bool extra = you.get_base_mutation_level(mut, false, true, true) > 0;
 
-            if (fully_inactive || (mut == MUT_COLD_BLOODED && player_res_cold(false) > 0))
+            if (fully_inactive || (mut == MUT_COLD_BLOODED && you.res_cold(false) > 0))
                 colourname = "darkgrey";
             else if (is_sacrifice)
                 colourname = "lightred";

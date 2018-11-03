@@ -1830,7 +1830,8 @@ static int _get_monster_jewellery_value(const monster *mon,
         value += get_jewellery_see_invisible(item, true);
 
     // If we're not naturally corrosion-resistant.
-    if (item.sub_type == RING_RESIST_CORROSION && !mon->res_corr(false, false))
+    option_list opts(false, false);
+    if (item.sub_type == RING_RESIST_CORROSION && !mon->res_corr(opts))
         value++;
 
     return value;
@@ -2815,11 +2816,12 @@ bool monster::go_berserk(bool intentional, bool /* potion */)
 void monster::expose_to_element(beam_type flavour, int strength,
                                 bool slow_cold_blood)
 {
+    option_list opts;
     switch (flavour)
     {
     case BEAM_COLD:
         if (slow_cold_blood && mons_class_flag(type, M_COLD_BLOOD)
-            && res_cold() <= 0 && coinflip())
+            && res_cold(opts) <= 0 && coinflip())
         {
             do_slow_monster(*this, this, (strength + random2(5)) * BASELINE_DELAY);
         }
@@ -3717,7 +3719,7 @@ bool monster::res_damnation() const
     return get_mons_resist(*this, MR_RES_DAMNATION);
 }
 
-int monster::res_fire() const
+int monster::res_fire(option_list options) const
 {
     int u = get_mons_resist(*this, MR_RES_FIRE);
 
@@ -3757,13 +3759,13 @@ int monster::res_fire() const
     return u;
 }
 
-int monster::res_steam() const
+int monster::res_steam(option_list opts) const
 {
     int res = get_mons_resist(*this, MR_RES_STEAM);
     if (wearing(EQ_BODY_ARMOUR, ARM_STEAM_DRAGON_ARMOUR))
         res += 3;
 
-    res += (res_fire() + 1) / 2;
+    res += (res_fire(opts) + 1) / 2;
 
     if (res > 3)
         res = 3;
@@ -3771,7 +3773,7 @@ int monster::res_steam() const
     return res;
 }
 
-int monster::res_cold() const
+int monster::res_cold(option_list opts) const
 {
     int u = get_mons_resist(*this, MR_RES_COLD);
 
@@ -3808,7 +3810,7 @@ int monster::res_cold() const
     return u;
 }
 
-int monster::res_elec() const
+int monster::res_elec(option_list opts) const
 {
     // This is a variable, not a player_xx() function, so can be above 1.
     int u = 0;
@@ -3862,11 +3864,11 @@ int monster::res_water_drowning() const
     return sgn(rw);
 }
 
-int monster::res_poison(bool temp) const
+int monster::res_poison(option_list opts) const
 {
     int u = get_mons_resist(*this, MR_RES_POISON);
 
-    if (temp && has_ench(ENCH_POISON_VULN))
+    if (opts.temp && has_ench(ENCH_POISON_VULN))
         u--;
 
     if (u > 0)
@@ -3904,12 +3906,12 @@ int monster::res_poison(bool temp) const
     return u;
 }
 
-bool monster::res_sticky_flame() const
+bool monster::res_sticky_flame(option_list opts) const
 {
     return is_insubstantial() || get_mons_resist(*this, MR_RES_STICKY_FLAME) > 0;
 }
 
-int monster::res_rotting(bool /*temp*/) const
+int monster::res_rotting(option_list opts) const
 {
     int res = 0;
     const mon_holy_type holi = holiness();
@@ -3955,7 +3957,7 @@ int monster::res_holy_energy() const
     return 0;
 }
 
-int monster::res_negative_energy(bool intrinsic_only) const
+int monster::res_negative_energy(option_list opts) const
 {
     // If you change this, also change get_mons_resists.
     if (!(holiness() & MH_NATURAL))
@@ -3963,7 +3965,7 @@ int monster::res_negative_energy(bool intrinsic_only) const
 
     int u = get_mons_resist(*this, MR_RES_NEG);
 
-    if (mons_itemuse(*this) >= MONUSE_STARTING_EQUIPMENT && !intrinsic_only)
+    if (mons_itemuse(*this) >= MONUSE_STARTING_EQUIPMENT && opts.temp)
     {
         u += scan_artefacts(ARTP_NEGATIVE_ENERGY);
 
@@ -3991,7 +3993,7 @@ int monster::res_negative_energy(bool intrinsic_only) const
     return u;
 }
 
-bool monster::res_torment() const
+bool monster::res_torment(option_list opts) const
 {
     const mon_holy_type holy = holiness();
     return holy & (MH_UNDEAD | MH_DEMONIC | MH_PLANT | MH_NONLIVING)
@@ -4005,7 +4007,7 @@ bool monster::res_tornado() const
            || get_mons_resist(*this, MR_RES_TORNADO) > 0;
 }
 
-bool monster::res_petrify(bool /*temp*/) const
+bool monster::res_petrify(option_list opts) const
 {
     return is_insubstantial() || get_mons_resist(*this, MR_RES_PETRIFY) > 0;
 }
@@ -4023,17 +4025,17 @@ int monster::res_constrict() const
     return 0;
 }
 
-bool monster::res_corr(bool calc_unid, bool items) const
+bool monster::res_corr(option_list opts) const
 {
     if (get_mons_resist(*this, MR_RES_ACID) > 0)
         return true;
 
-    return actor::res_corr(calc_unid, items);
+    return actor::res_corr(opts);
 }
 
-int monster::res_acid(bool calc_unid) const
+int monster::res_acid(option_list opts) const
 {
-    int u = max(get_mons_resist(*this, MR_RES_ACID), (int)actor::res_corr(calc_unid));
+    int u = max(get_mons_resist(*this, MR_RES_ACID), (int)actor::res_corr(opts.calc_unid));
 
     if (has_ench(ENCH_RESISTANCE))
         u++;
@@ -4048,7 +4050,7 @@ int monster::res_acid(bool calc_unid) const
  *                      know about.
  * @return              The monster's magic resistance value.
  */
-int monster::res_magic(bool calc_unid) const
+int monster::res_magic(option_list opts) const
 {
     if (mons_immune_magic(*this))
         return MAG_IMMUNE;
@@ -4080,19 +4082,19 @@ int monster::res_magic(bool calc_unid) const
     // (remove ", false" and add appropriate flag checks for calc_unid)
 
     if (armour != NON_ITEM && mitm[armour].base_type == OBJ_ARMOUR
-        && (calc_unid || (mitm[armour].flags & ISFLAG_KNOW_TYPE)))
+        && (opts.calc_unid || (mitm[armour].flags & ISFLAG_KNOW_TYPE)))
     {
         u += get_armour_res_magic(mitm[armour], false);
     }
 
     if (shld != NON_ITEM && mitm[shld].base_type == OBJ_ARMOUR
-        && (calc_unid || (mitm[shld].flags & ISFLAG_KNOW_TYPE)))
+        && (opts.calc_unid || (mitm[shld].flags & ISFLAG_KNOW_TYPE)))
     {
         u += get_armour_res_magic(mitm[shld], false);
     }
 
     if (jewellery != NON_ITEM && mitm[jewellery].base_type == OBJ_JEWELLERY
-        && calc_unid) // XXX: can you ever see monster jewellery?
+        && opts.calc_unid) // XXX: can you ever see monster jewellery?
     {
         u += get_jewellery_res_magic(mitm[jewellery], false);
     }
@@ -4284,7 +4286,8 @@ god_type monster::deity() const
 
 bool monster::drain_exp(actor *agent, bool quiet, int pow)
 {
-    if (res_negative_energy() >= 3)
+    option_list opts;
+    if (res_negative_energy(opts) >= 3)
         return false;
 
     if (!quiet && you.can_see(*this))
@@ -4298,8 +4301,8 @@ bool monster::drain_exp(actor *agent, bool quiet, int pow)
         int dur = min(200 + random2(100),
                       300 - get_ench(ENCH_DRAINED).duration - random2(50));
 
-        if (res_negative_energy())
-            dur /= (res_negative_energy() * 2);
+        if (res_negative_energy(opts))
+            dur /= (res_negative_energy(opts) * 2);
 
         const mon_enchant drain_ench = mon_enchant(ENCH_DRAINED, 1, agent,
                                                    dur);
@@ -4311,7 +4314,8 @@ bool monster::drain_exp(actor *agent, bool quiet, int pow)
 
 bool monster::rot(actor *agent, int amount, bool quiet, bool no_cleanup)
 {
-    if (res_rotting() || amount <= 0)
+    option_list opts;
+    if (res_rotting(opts) || amount <= 0)
         return false;
 
     if (!quiet && you.can_see(*this))
@@ -4335,6 +4339,7 @@ bool monster::rot(actor *agent, int amount, bool quiet, bool no_cleanup)
 
 bool monster::corrode_equipment(const char* corrosion_source, int degree)
 {
+    option_list opts;
     // Don't corrode spectral weapons or temporary items.
     if (mons_is_avatar(type) || type == MONS_PLAYER_SHADOW)
         return false;
@@ -4343,7 +4348,7 @@ bool monster::corrode_equipment(const char* corrosion_source, int degree)
     // As long as degree is at least 1, we'll apply the status once, because
     // it doesn't look to me like applying it more times does anything.
     // If I'm wrong, we should fix that.
-    if (res_corr())
+    if (res_corr(opts))
     {
         degree = binomial(degree, 50);
         if (!degree)
@@ -5033,7 +5038,8 @@ kill_category monster::kill_alignment() const
 
 bool monster::sicken(int amount)
 {
-    if (res_rotting() || (amount /= 2) < 1)
+    option_list opts;
+    if (res_rotting(opts) || (amount /= 2) < 1)
         return false;
 
     if (!has_ench(ENCH_SICK) && you.can_see(*this))
@@ -6066,9 +6072,9 @@ void monster::react_to_damage(const actor *oppressor, int damage,
     if (!alive())
         return;
 
-
+    option_list opts;
     if (mons_species() == MONS_BUSH
-        && res_fire() < 0 && flavour == BEAM_FIRE
+        && res_fire(opts) < 0 && flavour == BEAM_FIRE
         && damage > 8 && x_chance_in_y(damage, 20))
     {
         place_cloud(CLOUD_FIRE, pos(), 20 + random2(15), oppressor, 5);

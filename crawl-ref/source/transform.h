@@ -115,15 +115,15 @@ public:
     virtual string transform_message(transformation previous_trans) const;
     virtual string get_untransform_message() const;
 
-    virtual int res_fire() const;
-    virtual int res_cold() const;
-    int res_neg() const;
-    bool res_elec() const;
-    int res_pois() const;
-    bool res_rot() const;
-    bool res_acid() const;
-    bool res_sticky_flame() const;
-    bool res_petrify() const;
+    virtual int res_fire(option_list options) const;
+    virtual int res_cold(option_list opts) const;
+    int res_neg(option_list opts) const;
+    bool res_elec(option_list opts) const;
+    int res_pois(option_list opts) const;
+    bool res_rot(option_list opts) const;
+    bool res_acid(option_list opts) const;
+    bool res_sticky_flame(option_list opts) const;
+    bool res_petrify(option_list opts) const;
 
     /**
      * Base unarmed damage provided by the form.

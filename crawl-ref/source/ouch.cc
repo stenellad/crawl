@@ -103,6 +103,7 @@ void maybe_melt_player_enchantments(beam_type flavour, int damage)
 int check_your_resists(int hurted, beam_type flavour, string source,
                        bolt *beam, bool doEffects)
 {
+    option_list opts;
     int original = hurted;
 
     dprf("checking resistance: flavour=%d", flavour);
@@ -181,7 +182,7 @@ int check_your_resists(int hurted, beam_type flavour, string source,
             pois = 3 + random_range(pois * 2 / 3, pois * 4 / 3);
             poison_player(pois, source, kaux);
 
-            if (player_res_poison() > 0)
+            if (you.res_poison(opts) > 0)
                 canned_msg(MSG_YOU_RESIST);
         }
 
@@ -196,8 +197,8 @@ int check_your_resists(int hurted, beam_type flavour, string source,
             ASSERT(beam);
             int pois = div_rand_round(beam->damage.num * beam->damage.size, 3);
             pois = 3 + random_range(pois * 2 / 3, pois * 4 / 3);
-
-            const int resist = player_res_poison();
+            option_list opts;
+            const int resist = you.res_poison(opts);
             poison_player((resist ? pois / 2 : pois), source, kaux, true);
         }
 
@@ -247,7 +248,7 @@ int check_your_resists(int hurted, beam_type flavour, string source,
         break;
 
     case BEAM_MIASMA:
-        if (you.res_rotting())
+        if (you.res_rotting(opts))
         {
             if (doEffects)
                 canned_msg(MSG_YOU_RESIST);
@@ -304,12 +305,13 @@ int check_your_resists(int hurted, beam_type flavour, string source,
  */
 void expose_player_to_element(beam_type flavour, int strength, bool slow_cold_blooded)
 {
+    option_list opts;
     dprf("expose_player_to_element, strength %i, flavor %i, slow_cold_blooded is %i", strength, flavour, slow_cold_blooded);
     qazlal_element_adapt(flavour, strength);
 
     if (flavour == BEAM_COLD && slow_cold_blooded
         && you.get_mutation_level(MUT_COLD_BLOODED)
-        && you.res_cold() <= 0 && coinflip())
+        && you.res_cold(opts) <= 0 && coinflip())
     {
         you.slow_down(0, strength);
     }
@@ -386,10 +388,11 @@ void lose_level()
  */
 bool drain_player(int power, bool announce_full, bool ignore_protection)
 {
+    option_list opts;
     if (crawl_state.disables[DIS_AFFLICTIONS])
         return false;
 
-    const int protection = ignore_protection ? 0 : player_prot_life();
+    const int protection = ignore_protection ? 0 : you.res_negative_energy(opts);
 
     if (protection == 3)
     {

@@ -116,7 +116,8 @@ int actor::skill_rdiv(skill_type sk, int mult, int div) const
 
 int actor::check_res_magic(int power)
 {
-    const int mrs = res_magic();
+    option_list opts;
+    const int mrs = res_magic(opts);
 
     if (mrs == MAG_IMMUNE)
         return 100;
@@ -142,6 +143,7 @@ void actor::set_position(const coord_def &c)
 
 bool actor::can_hibernate(bool holi_only, bool intrinsic_only) const
 {
+    option_list opts;
     // Undead, nonliving, and plants don't sleep. If the monster is
     // berserk or already asleep, it doesn't sleep either.
     if (!can_sleep(holi_only))
@@ -152,7 +154,7 @@ bool actor::can_hibernate(bool holi_only, bool intrinsic_only) const
         // The monster is cold-resistant and can't be hibernated.
         if (intrinsic_only && is_monster()
                 ? get_mons_resist(*as_monster(), MR_RES_COLD) > 0
-                : res_cold() > 0)
+                : res_cold(opts) > 0)
         {
             return false;
         }
@@ -207,11 +209,11 @@ bool actor::gourmand(bool calc_unid, bool items) const
     return items && wearing(EQ_AMULET, AMU_THE_GOURMAND, calc_unid);
 }
 
-bool actor::res_corr(bool calc_unid, bool items) const
+bool actor::res_corr(option_list opts) const
 {
-    return items && (wearing(EQ_RINGS, RING_RESIST_CORROSION, calc_unid)
-                     || wearing(EQ_BODY_ARMOUR, ARM_ACID_DRAGON_ARMOUR, calc_unid)
-                     || scan_artefacts(ARTP_RCORR, calc_unid));
+    return opts.items && (wearing(EQ_RINGS, RING_RESIST_CORROSION, opts.calc_unid)
+                     || wearing(EQ_BODY_ARMOUR, ARM_ACID_DRAGON_ARMOUR, opts.calc_unid)
+                     || scan_artefacts(ARTP_RCORR, opts.calc_unid));
 }
 
 bool actor::cloud_immune(bool calc_unid, bool items) const
@@ -385,8 +387,9 @@ int actor::apply_ac(int damage, int max_damage, ac_type ac_rule,
 
 bool actor_slime_wall_immune(const actor *act)
 {
+    option_list opts;
     return act->is_player() && have_passive(passive_t::slime_wall_immune)
-        || act->res_acid() == 3
+        || act->res_acid(opts) == 3
         || act->is_monster() && mons_is_slime(*act->as_monster());
 }
 
@@ -961,7 +964,8 @@ bool actor::torpor_slowed() const
 
 string actor::resist_margin_phrase(int margin) const
 {
-    if (res_magic() == MAG_IMMUNE)
+    option_list opts;
+    if (res_magic(opts) == MAG_IMMUNE)
         return " " + conj_verb("are") + " unaffected.";
 
     static const string resist_messages[][2] =

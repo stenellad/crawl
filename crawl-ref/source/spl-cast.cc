@@ -951,6 +951,7 @@ static void _majin_speak(spell_type spell)
 static void _spellcasting_side_effects(spell_type spell, god_type god,
                                        bool fake_spell)
 {
+    option_list opts;
     _spellcasting_god_conduct(spell);
 
     if (god == GOD_NO_GOD)
@@ -958,7 +959,7 @@ static void _spellcasting_side_effects(spell_type spell, god_type god,
         // Casting pain costs 1 hp.
         // Deep Dwarves' damage reduction always blocks at least 1 hp.
         if (spell == SPELL_PAIN
-            && (you.species != SP_DEEP_DWARF && !player_res_torment()))
+            && (you.species != SP_DEEP_DWARF && !you.res_torment(opts)))
         {
             dec_hp(1, false);
         }

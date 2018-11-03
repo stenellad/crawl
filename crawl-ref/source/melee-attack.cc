@@ -2088,6 +2088,7 @@ void melee_attack::decapitate(int dam_type)
  */
 void melee_attack::attacker_sustain_passive_damage()
 {
+    option_list opts;
     // If the defender has been cleaned up, it's too late for anything.
     if (!defender->alive())
         return;
@@ -2095,7 +2096,7 @@ void melee_attack::attacker_sustain_passive_damage()
     if (!mons_class_flag(defender->type, M_ACID_SPLASH))
         return;
 
-    if (attacker->res_acid() >= 3)
+    if (attacker->res_acid(opts) >= 3)
         return;
 
     if (!adjacent(attacker->pos(), defender->pos()) || is_riposte)
@@ -2428,7 +2429,8 @@ bool melee_attack::mons_do_poison()
 
 void melee_attack::mons_do_napalm()
 {
-    if (defender->res_sticky_flame())
+    option_list opts;
+    if (defender->res_sticky_flame(opts))
         return;
 
     if (one_chance_in(3))
@@ -2590,6 +2592,7 @@ bool melee_attack::mons_attack_effects()
 
 void melee_attack::mons_apply_attack_flavour()
 {
+    option_list opts;
     // Most of this is from BWR 4.1.2.
 
     attack_flavour flavour = attk_flavour;
@@ -2788,7 +2791,7 @@ void melee_attack::mons_apply_attack_flavour()
             mpr("Your divine stamina protects you from poison!");
             break;
         }
-        else if (defender->res_poison() >= 3)
+        else if (defender->res_poison(opts) >= 3)
             break;
 
         // Same frequency as AF_POISON and AF_POISON_STRONG.
@@ -2803,10 +2806,10 @@ void melee_attack::mons_apply_attack_flavour()
         // chance to resist with rPois.
         if (one_chance_in(6))
         {
-            if (defender->res_poison() <= 0 || one_chance_in(3))
+            if (defender->res_poison(opts) <= 0 || one_chance_in(3))
                 defender->paralyse(attacker, roll_dice(1, 3));
         }
-        else if (defender->res_poison() <= 0 || one_chance_in(3))
+        else if (defender->res_poison(opts) <= 0 || one_chance_in(3))
             defender->slow_down(attacker, roll_dice(1, 3));
 
         break;

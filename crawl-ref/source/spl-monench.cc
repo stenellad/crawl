@@ -15,6 +15,7 @@
 
 int englaciate(coord_def where, int pow, actor *agent)
 {
+    option_list opts;
     actor *victim = actor_at(where);
 
     if (!victim || victim == agent)
@@ -25,7 +26,7 @@ int englaciate(coord_def where, int pow, actor *agent)
 
     monster* mons = victim->as_monster();
 
-    if (victim->res_cold() > 0
+    if (victim->res_cold(opts) > 0
         || victim->is_stationary())
     {
         if (!mons)

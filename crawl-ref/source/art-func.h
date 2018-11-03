@@ -123,7 +123,7 @@ static void _CEREBOV_melee_effects(item_def* weapon, actor* attacker,
     if (dam)
     {
         if (defender->is_player()
-            && defender->res_fire() <= 3
+            && defender->res_fire(you.opts) <= 3
             && !you.duration[DUR_FIRE_VULN])
         {
             mpr("The sword of Cerebov burns away your fire resistance.");

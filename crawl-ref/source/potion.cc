@@ -432,7 +432,8 @@ public:
 
     bool quaff(bool was_known) const override
     {
-        if (player_res_poison() >= 1)
+        option_list opts;
+        if (you.res_poison(opts) >= 1)
             mpr("You feel slightly nauseous.");
         else if (effect(was_known))
             xom_is_stimulated(100 / _xom_factor(was_known));

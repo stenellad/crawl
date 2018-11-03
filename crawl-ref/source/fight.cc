@@ -483,31 +483,32 @@ static inline int get_resistible_fraction(beam_type flavour)
 
 static int _beam_to_resist(const actor* defender, beam_type flavour)
 {
+    option_list opts;
     switch (flavour)
     {
         case BEAM_FIRE:
         case BEAM_LAVA:
-            return defender->res_fire();
+            return defender->res_fire(opts);
         case BEAM_DAMNATION:
             return defender->res_damnation();
         case BEAM_STEAM:
-            return defender->res_steam();
+            return defender->res_steam(opts);
         case BEAM_COLD:
         case BEAM_ICE:
-            return defender->res_cold();
+            return defender->res_cold(opts);
         case BEAM_WATER:
             return defender->res_water_drowning();
         case BEAM_ELECTRICITY:
-            return defender->res_elec();
+            return defender->res_elec(opts);
         case BEAM_NEG:
         case BEAM_PAIN:
         case BEAM_MALIGN_OFFERING:
-            return defender->res_negative_energy();
+            return defender->res_negative_energy(opts);
         case BEAM_ACID:
-            return defender->res_acid();
+            return defender->res_acid(opts);
         case BEAM_POISON:
         case BEAM_POISON_ARROW:
-            return defender->res_poison();
+            return defender->res_poison(opts);
         case BEAM_HOLY:
             return defender->res_holy_energy();
         default:

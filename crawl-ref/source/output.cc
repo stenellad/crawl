@@ -2373,17 +2373,17 @@ static vector<formatted_string> _get_overview_resistances(
     // First column, resist name is up to 9 chars
     int cwidth = 9;
     string out;
-
-    const int rfire = player_res_fire(calc_unid);
+    option_list opts = option_list(calc_unid);
+    const int rfire = you.res_fire(opts);
     out += _resist_composer("rFire", cwidth, rfire, 3) + "\n";
 
-    const int rcold = player_res_cold(calc_unid);
+    const int rcold = you.res_cold(opts);
     out += _resist_composer("rCold", cwidth, rcold, 3) + "\n";
 
-    const int rlife = player_prot_life(calc_unid);
+    const int rlife = you.res_negative_energy(opts);
     out += _resist_composer("rNeg", cwidth, rlife, 3) + "\n";
 
-    const int rpois = player_res_poison(calc_unid);
+    const int rpois = you.res_poison(opts);
     string rpois_string = _resist_composer("rPois", cwidth, rpois) + "\n";
     //XXX
     if (rpois == 3)
@@ -2393,10 +2393,10 @@ static vector<formatted_string> _get_overview_resistances(
     }
     out += rpois_string;
 
-    const int relec = player_res_electricity(calc_unid);
+    const int relec = you.res_elec(opts);
     out += _resist_composer("rElec", cwidth, relec) + "\n";
 
-    const int rcorr = you.res_corr(calc_unid);
+    const int rcorr = you.res_corr(opts);
     out += _resist_composer("rCorr", cwidth, rcorr) + "\n";
 
     const int rmuta = (you.rmut_from_item(calc_unid)
@@ -2404,7 +2404,7 @@ static vector<formatted_string> _get_overview_resistances(
     if (rmuta)
         out += _resist_composer("rMut", cwidth, rmuta) + "\n";
 
-    const int rmagi = player_res_magic(calc_unid) / MR_PIP;
+    const int rmagi = you.res_magic(opts) / MR_PIP;
     out += _resist_composer("MR", cwidth, rmagi, 5) + "\n";
 
     out += _stealth_bar(20) + "\n";
