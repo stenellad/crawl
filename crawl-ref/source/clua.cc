@@ -781,6 +781,9 @@ void CLua::init_lua()
         {LUA_TABLIBNAME, luaopen_table},
         {LUA_STRLIBNAME, luaopen_string},
         {LUA_MATHLIBNAME, luaopen_math},
+        {LUA_LOADLIBNAME, luaopen_package},
+        {LUA_LOADLIBNAME, luaopen_io},
+        {LUA_LOADLIBNAME, luaopen_debug},
     };
 
     for (auto l : lua_core_libs)

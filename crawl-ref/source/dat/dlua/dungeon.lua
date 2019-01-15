@@ -3,9 +3,15 @@
 -- Dungeoneering functions.
 ------------------------------------------------------------------------------
 
+package.path = package.path .. ';C:\\Users\\User\\Desktop\\lua-5.1.5_Win64_dll15_lib\\x64\\Release\\?.lua;C:\\Users\\User\\Desktop\\lua-5.1.5_Win64_dll15_lib\\x64\\Release\\?\\?.lua'
+package.cpath = package.cpath ..
+';C:\\Users\\User\\Desktop\\lua-5.1.5_Win64_dll15_lib\\x64\\Release\\?.dll;C:\\Users\\User\\Desktop\\lua-5.1.5_Win64_dll15_lib\\x64\\Release\\?\\?.dll'
+
+
 crawl_require("dlua/point.lua")
 crawl_require("dlua/fnwrap.lua")
 crawl_require('dlua/util.lua')
+require('..\\dat\\dlua\\mobdebug').start()
 
 -- Namespace for callbacks (just an aid to recognising callbacks, no magic)
 util.namespace('callback')
