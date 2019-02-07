@@ -497,6 +497,7 @@ static void _show_commandline_options_help()
     puts("  -no-throttle          disable throttling of user Lua scripts");
 #else
     puts("  -throttle             enable throttling of user Lua scripts");
+    puts("  -seed <number>        specify a game seed to use when creating a new game");
 #endif
 
     puts("");
@@ -1280,7 +1281,7 @@ static bool _can_take_stairs(dungeon_feature_type ftype, bool down,
         if (ftype != it->entry_stairs)
             continue;
 
-        if (!is_existing_level(level_id(it->id, 1)))
+        if (!you.level_visited(level_id(it->id, 1)))
         {
             min_runes = runes_for_branch(it->id);
             if (runes_in_pack() < min_runes)

@@ -9,6 +9,7 @@
 
 #include <string>
 #include <cctype>
+#include <cinttypes>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -210,6 +211,15 @@ static void _sdump_header(dump_params &par)
     par.text += " (console)";
 #endif
     par.text += " character file.\n\n";
+
+    if (you.game_is_seeded
+#ifdef DGAMELAUNCH
+        && par.se // for online games, only show seed for a dead char
+#endif
+        )
+    {
+        par.text += make_stringf("Game seed: %" PRIu64 "\n\n", crawl_state.seed);
+    }
 }
 
 static void _sdump_stats(dump_params &par)
@@ -1106,7 +1116,7 @@ static void _sdump_vault_list(dump_params &par)
 #endif
      )
     {
-        par.text += "Vault maps used:\n";
+        par.text += "Levels and vault maps discovered:\n";
         par.text += dump_vault_maps();
         par.text += "\n";
     }

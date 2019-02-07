@@ -529,9 +529,11 @@ void update_monsters_in_view()
 
 
 // We logically associate a difficulty parameter with each tile on each level,
-// to make deterministic magic mapping work. This function returns the
-// difficulty parameters for each tile on the current level, whose difficulty
-// is less than a certain amount.
+// to make deterministic passive mapping work. It is deterministic so that the
+// reveal order doesn't, for example, change on reload.
+//
+// This function returns the difficulty parameters for each tile on the current
+// level, whose difficulty is less than a certain amount.
 //
 // Random difficulties are used in the few cases where we want repeated maps
 // to give different results; scrolls and cards, since they are a finite
@@ -1151,7 +1153,9 @@ public:
 
     void init_frame(int frame) override
     {
-        offset = coord_def(random2(3) - 1, random2(3) - 1);
+        offset = coord_def();
+        offset.x = random2(3) - 1;
+        offset.y = random2(3) - 1;
     }
 
     coord_def cell_cb(const coord_def &pos, int &colour) override

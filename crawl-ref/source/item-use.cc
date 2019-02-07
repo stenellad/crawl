@@ -2095,6 +2095,16 @@ void drink(item_def* potion)
         return;
     }
 
+    string prompt = make_stringf("Really quaff the %s?",
+                                 potion->name(DESC_DBNAME).c_str());
+    if (alreadyknown && is_dangerous_item(*potion, true)
+        && Options.bad_item_prompt
+        && !yesno(prompt.c_str(), false, 'n'))
+    {
+        canned_msg(MSG_OK);
+        return;
+    }
+
     // The "> 1" part is to reduce the amount of times that Xom is
     // stimulated when you are a low-level 1 trying your first unknown
     // potions on monsters.
@@ -2805,6 +2815,10 @@ void read(item_def* scroll)
         bool penance = god_hates_item(*scroll);
         string verb_object = "read the " + scroll->name(DESC_DBNAME);
 
+        string penance_prompt = make_stringf("Really %s? This action would"
+                                             " place you under penance!",
+                                             verb_object.c_str());
+
         targeter_los hitfunc(&you, LOS_NO_TRANS);
 
         if (stop_attack_prompt(hitfunc, verb_object.c_str(),
@@ -2816,15 +2830,17 @@ void read(item_def* scroll)
         {
             return;
         }
-
-        string penance_prompt = make_stringf("Really %s? This action would"
-                                             " place you under penance!",
-                                             verb_object.c_str());
-        // Having a separate prompt if the player is going to harm allies and
-        // get penance is a bit awkward; but for gods where this will happen
-        // the player is going to get punished both for hurting the allies and
-        // using a bad item so they'd better be sure.
-        if (penance && !yesno(penance_prompt.c_str(), false, 'n'))
+        else if (penance && !yesno(penance_prompt.c_str(), false, 'n'))
+        {
+            canned_msg(MSG_OK);
+            return;
+        }
+        else if ((is_dangerous_item(*scroll, true)
+                  || is_bad_item(*scroll, true))
+                 && Options.bad_item_prompt
+                 && !yesno(make_stringf("Really %s?",
+                                        verb_object.c_str()).c_str(),
+                           false, 'n'))
         {
             canned_msg(MSG_OK);
             return;
@@ -2999,6 +3015,7 @@ void read_scroll(item_def& scroll)
         break;
 
     case SCR_FOG:
+    {
         if (alreadyknown && (env.level_state & LSTATE_STILL_WINDS))
         {
             mpr("The air is too still for clouds to form.");
@@ -3006,8 +3023,10 @@ void read_scroll(item_def& scroll)
             break;
         }
         mpr("The scroll dissolves into smoke.");
-        big_cloud(random_smoke_type(), &you, you.pos(), 50, 8 + random2(8));
+        auto smoke = random_smoke_type();
+        big_cloud(smoke, &you, you.pos(), 50, 8 + random2(8));
         break;
+    }
 
     case SCR_MAGIC_MAPPING:
         if (alreadyknown && !is_map_persistent())

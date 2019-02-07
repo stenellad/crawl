@@ -181,8 +181,10 @@ bool dist::isMe() const
 
 void dist::confusion_fuzz(int range)
 {
-    target   = you.pos() + coord_def(random_range(-range, range),
-                                     random_range(-range, range));
+    target   = you.pos();
+    target.x += random_range(-range, range);
+    target.y += random_range(-range, range);
+
     choseRay = false;
 }
 
@@ -2045,6 +2047,7 @@ bool direction_chooser::choose_direction()
 
     clear_messages();
     msgwin_set_temporary(true);
+    unwind_bool save_more(crawl_state.show_more_prompt, false);
     show_initial_prompt();
     need_text_redraw = false;
 
@@ -2998,6 +3001,8 @@ static string _describe_monster_weapon(const monster_info& mi, bool ident)
 
     if (mi.type == MONS_PANDEMONIUM_LORD)
         desc += " armed with ";
+    else if (mi.type == MONS_DANCING_WEAPON)
+        desc += " ";
     else
         desc += " wielding ";
     desc += name1;
@@ -3294,7 +3299,7 @@ string get_monster_equipment_desc(const monster_info& mi,
 
     string weap = "";
 
-    if (mi.type != MONS_DANCING_WEAPON && mi.type != MONS_SPECTRAL_WEAPON)
+    if (mi.type != MONS_SPECTRAL_WEAPON)
         weap = _describe_monster_weapon(mi, level == DESC_IDENTIFIED);
 
     // Print the rest of the equipment only for full descriptions.

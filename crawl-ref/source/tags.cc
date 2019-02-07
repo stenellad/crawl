@@ -1656,8 +1656,11 @@ static void tag_construct_you(writer &th)
     for (mid_t recallee : you.recall_list)
         _marshall_as_int(th, recallee);
 
-    marshallUByte(th, 1); // number of seeds: always 1
-    marshallInt(th, you.game_seed);
+    marshallUByte(th, 1); // number of seeds, for historical reasons: always 1
+    marshallUnsigned(th, you.game_seed);
+    marshallBoolean(th, you.game_is_seeded);
+    CrawlVector rng_states = generators_to_vector();
+    rng_states.write(th);
 
     CANARY;
 
@@ -3164,6 +3167,13 @@ static void tag_read_you(reader &th)
             you.mutation[MUT_INHIBITED_REGENERATION] = 1;
     }
 
+    if (th.getMinorVersion() < TAG_MINOR_YELLOW_DRACONIAN_RACID
+        && you.species == SP_YELLOW_DRACONIAN)
+    {
+        you.mutation[MUT_ACID_RESISTANCE] = 1;
+        you.innate_mutation[MUT_ACID_RESISTANCE] = 1;
+    }
+
     // Fixup for Sacrifice XP from XL 27 (#9895). No minor tag, but this
     // should still be removed on a major bump.
     const int xl_remaining = you.get_max_xl() - you.experience_level;
@@ -3642,9 +3652,35 @@ static void tag_read_you(reader &th)
     {
 #endif
     count = unmarshallUByte(th);
-    you.game_seed = count > 0 ? unmarshallInt(th) : get_uint32();
-    for (int i = 1; i < count; i++)
-        unmarshallInt(th);
+
+#if TAG_MAJOR_VERSION == 34
+    ASSERT(th.getMinorVersion() < TAG_MINOR_GAMESEEDS || count == 1);
+    if (th.getMinorVersion() < TAG_MINOR_GAMESEEDS)
+    {
+        you.game_seed = count > 0 ? unmarshallInt(th) : get_uint64();
+        dprf("Upgrading from unseeded game.");
+        crawl_state.seed = you.game_seed;
+        you.game_is_seeded = false;
+        for (int i = 1; i < count; i++)
+            unmarshallInt(th);
+    }
+    else
+    {
+#endif
+        // RNG block: game seed (uint64), whether the game is properly seeded,
+        // and then internal RNG states stored as a vector.
+        ASSERT(count == 1);
+        you.game_seed = unmarshallUnsigned(th);
+        dprf("Unmarshalling seed %" PRIu64, you.game_seed);
+        crawl_state.seed = you.game_seed;
+        you.game_is_seeded = unmarshallBoolean(th);
+        CrawlVector rng_states;
+        rng_states.read(th);
+        load_generators(rng_states);
+#if TAG_MAJOR_VERSION == 34
+    }
+#endif
+
 #if TAG_MAJOR_VERSION == 34
     }
 #endif
